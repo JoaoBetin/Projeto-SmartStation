@@ -1,83 +1,73 @@
-📦 Smart Station
+<div align="center">
+  <img src="https://img.shields.io/badge/Smart_Station-Project-blue?style=for-the-badge&logo=iot" alt="Smart Station Logo">
+  <h1>Station Smart Station - Monitoramento de Processos</h1>
+  <p><i>Otimizando a logística e o tempo de operação com Inteligência e Visão Computacional.</i></p>
+</div>
 
-Smart Station é um sistema de monitoramento de processos operacionais utilizando visão computacional.
-O objetivo do projeto é medir e analisar o tempo de execução de um processo produtivo, especificamente o tempo que um operador leva para inserir itens em uma caixa até que ela saia da área monitorada pela câmera.
+<hr>
 
-Além disso, o sistema também identifica períodos de ociosidade da bancada, ou seja, quando não há movimentação ou presença de caixas no local de trabalho.
+## 📌 Sobre o Projeto
 
-O projeto busca aplicar conceitos de Lean Digital, permitindo identificar gargalos, medir produtividade e analisar eficiência do processo.
+O **Smart Station** é uma solução completa para gestão de tempo em linhas de produção. O sistema monitora, através de uma câmera, o tempo que um operador leva para completar o envase de itens em uma caixa até a sua saída da estação. 
 
-🎯 Objetivo do Projeto
-
-O objetivo principal da Smart Station é coletar e disponibilizar dados sobre o tempo de execução de um processo operacional, permitindo visualizar:
-- Tempo total de processamento de uma caixa
-- Tempo médio de operação
-- Períodos de ociosidade da estação
-- Registro de eventos do processo
-Essas informações são exibidas em um dashboard interativo, permitindo acompanhar o desempenho da estação em tempo real ou através de registros históricos.
-
-⚙️ Como o sistema funciona
-O funcionamento do sistema ocorre em três etapas principais:
-
-1️⃣ Captura do Processo
-Uma câmera monitora a bancada de trabalho e utiliza visão computacional para identificar a presença de uma caixa.
-Quando uma caixa entra no campo de visão da câmera:
-- O sistema inicia a contagem do tempo.
-Quando a caixa sai da área monitorada:
-- O sistema encerra a contagem e registra o tempo total do processo.
-2️⃣ Processamento dos Dados
-Os dados capturados são enviados para o backend, onde são processados e armazenados para análise posterior.
-O backend é responsável por:
-- Receber os tempos registrados
-- Processar as informações
-- Disponibilizar os dados para o dashboard
-3️⃣ Visualização no Dashboard
-O dashboard exibe as informações do processo, permitindo acompanhar:
-- Tempo de cada operação
-- Tempo médio do processo
-- Períodos de ociosidade
-- Histórico de registros
-
-🧠 Tecnologias Utilizadas
-
-O projeto utiliza uma arquitetura simples dividida em três camadas:
-
-🐍 Python
-
-Responsável pela visão computacional e captura de dados da câmera, identificando a presença de caixas e registrando os tempos do processo.
-
-☕ Java
-
-Responsável pelo backend da aplicação, que recebe os dados do sistema de visão computacional e disponibiliza as informações para o frontend.
-Funções principais:
-
-- API para recebimento dos dados
-- Processamento das métricas
-- Integração com o dashboard
-
-⚛️ React
-
-Responsável pelo frontend da aplicação, onde será exibido um dashboard com os dados coletados.
-
-O dashboard apresenta:
-- Tempo de processamento das caixa
-- Estatísticas do processo
-- Informações de ociosidade da estação
-
-👨‍💻 Equipe
-
-Projeto desenvolvido como parte de atividade acadêmica do curso de Engenharia de Software – UNAERP.
-
-Henrique Falasco de Souza
-Rafael Golçalves Guerino
-Miguel Mendes Sant'ana
-Joao Filipe Betin
-Leonardo Elias
+Além do cronômetro de processo, o sistema detecta o **tempo de ociosidade** da bancada, identificando períodos sem movimento ou sem chegada de novas caixas, gerando dados valiosos para a eficiência operacional.
 
 
 
+---
 
+## 🚀 Funcionalidades Chave
 
+* **Monitoramento em Tempo Real:** Captura do início e fim do processo de empacotamento.
+* **Detecção de Ociosidade:** Cálculo exato de quanto tempo a bancada fica parada.
+* **Dashboard Interativo:** Visualização clara das métricas de performance.
+* **Arquitetura Escalável:** Divisão clara entre captura de dados, processamento e interface.
 
+---
 
+## 🛠️ Tecnologias Utilizadas
 
+<table>
+  <tr>
+    <td align="center"><b>Camada</b></td>
+    <td align="center"><b>Tecnologia</b></td>
+    <td align="center"><b>Função</b></td>
+  </tr>
+  <tr>
+    <td><b>Visão Computacional</b></td>
+    <td>Python</td>
+    <td>Processamento da imagem da câmera e lógica de detecção de movimento/objetos.</td>
+  </tr>
+  <tr>
+    <td><b>Backend</b></td>
+    <td>Java</td>
+    <td>Processamento de regras de negócio, persistência de dados e API.</td>
+  </tr>
+  <tr>
+    <td><b>Frontend</b></td>
+    <td>React</td>
+    <td>Dashboard para visualização dos indicadores (KPIs) de tempo.</td>
+  </tr>
+</table>
+
+---
+
+## 🏗️ Como o sistema funciona?
+
+1.  **Captura (Python):** A câmera monitora a área da caixa. Ao detectar a entrada e saída, o Python envia os timestamps para o backend.
+2.  **Processamento (Java):** O backend recebe os dados, calcula a diferença de tempo e armazena o histórico, gerenciando também o status da bancada.
+3.  **Visualização (React):** O dashboard consome a API Java e exibe em tempo real se a estação está ativa ou ociosa.
+
+---
+
+## 📂 Como rodar o repositório
+
+> [!IMPORTANT]
+> Certifique-se de ter o Python 3.x, JDK 17+ e Node.js instalados.
+
+```bash
+# Clone o repositório
+git clone [https://github.com/seu-usuario/smart-station.git](https://github.com/seu-usuario/smart-station.git)
+
+# Acesse a pasta do projeto
+cd smart-station
