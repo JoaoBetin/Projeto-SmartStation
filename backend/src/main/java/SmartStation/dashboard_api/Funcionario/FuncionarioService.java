@@ -31,4 +31,9 @@ public class FuncionarioService {
 
         return funcionarioModel.map(funcionarioMapper::toDTO).orElse(null);
     }
+
+    // Deletar
+    public void deletarFuncionario(Long id){
+        funcionarioRepository.deleteById(id);
+    }
 }

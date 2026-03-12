@@ -2,10 +2,7 @@ package SmartStation.dashboard_api.Funcionario;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -39,5 +36,18 @@ public class FuncionarioController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Funcionario nao encontrado");
+    }
+
+    @DeleteMapping("/deletar/{id}")
+    public ResponseEntity<?> deletarFuncionario(@RequestBody Long id){
+        FuncionarioDTO funcionarioDTO = funcionarioService.listarFuncionariosID(id);
+
+        if(funcionarioDTO != null){
+            funcionarioService.deletarFuncionario(id);
+            return ResponseEntity.ok(id + " foi deletado");
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(id + " nao foi encontrado");
     }
 }
