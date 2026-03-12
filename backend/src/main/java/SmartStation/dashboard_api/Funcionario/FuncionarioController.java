@@ -3,6 +3,7 @@ package SmartStation.dashboard_api.Funcionario;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,5 +27,17 @@ public class FuncionarioController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Nenhum funcionario registrado");
+    }
+
+    @GetMapping("/listarID/{id}")
+    public ResponseEntity<?> listarID(@RequestBody Long id){
+        FuncionarioDTO funcionarioDTO = funcionarioService.listarFuncionariosID(id);
+
+        if(funcionarioDTO != null){
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .body(funcionarioDTO);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Funcionario nao encontrado");
     }
 }
