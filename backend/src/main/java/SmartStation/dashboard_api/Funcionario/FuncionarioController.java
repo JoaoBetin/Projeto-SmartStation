@@ -27,7 +27,7 @@ public class FuncionarioController {
     }
 
     @GetMapping("/listarID/{id}")
-    public ResponseEntity<?> listarID(@RequestBody Long id){
+    public ResponseEntity<?> listarID(@PathVariable Long id){
         FuncionarioDTO funcionarioDTO = funcionarioService.listarFuncionariosID(id);
 
         if(funcionarioDTO != null){
@@ -39,7 +39,7 @@ public class FuncionarioController {
     }
 
     @DeleteMapping("/deletar/{id}")
-    public ResponseEntity<?> deletarFuncionario(@RequestBody Long id){
+    public ResponseEntity<?> deletarFuncionario(@PathVariable Long id){
         FuncionarioDTO funcionarioDTO = funcionarioService.listarFuncionariosID(id);
 
         if(funcionarioDTO != null){
@@ -49,5 +49,11 @@ public class FuncionarioController {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(id + " nao foi encontrado");
+    }
+
+    @PatchMapping("/alterar/{id}")
+    public ResponseEntity<?> alterarFuncionario(@PathVariable Long id, @RequestParam FuncionarioDTO funcionarioUser){
+        FuncionarioDTO funcionarioDTO = funcionarioService.alterarFuncionario(id, funcionarioUser);
+        return ResponseEntity.ok(funcionarioDTO);
     }
 }

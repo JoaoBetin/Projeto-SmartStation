@@ -22,5 +22,7 @@ public class FuncionarioModel {
 
     private Long matricula;
 
-    private boolean ativo;
+    private Boolean ativo;
+
+    private Cargo cargo;
 }

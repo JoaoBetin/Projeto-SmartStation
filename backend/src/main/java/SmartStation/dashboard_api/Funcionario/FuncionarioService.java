@@ -36,4 +36,29 @@ public class FuncionarioService {
     public void deletarFuncionario(Long id){
         funcionarioRepository.deleteById(id);
     }
+
+    // Alterar ID
+    public FuncionarioDTO alterarFuncionario(Long id, FuncionarioDTO funcionarioDTO){
+        FuncionarioModel funcionarioModel = funcionarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Funcionario nao encontrado"));
+
+        if(funcionarioDTO.getAtivo() != null){
+            funcionarioModel.setAtivo(funcionarioDTO.getAtivo());
+        }
+
+        if(funcionarioDTO.getMatricula() != null){
+            funcionarioModel.setMatricula(funcionarioDTO.getMatricula());
+        }
+
+        if(funcionarioDTO.getNome() != null){
+            funcionarioModel.setNome(funcionarioDTO.getNome());
+        }
+
+        if(funcionarioDTO.getCargo() != null){
+            funcionarioModel.setCargo(funcionarioDTO.getCargo());
+        }
+
+        FuncionarioModel funcionarioSalvo = funcionarioRepository.save(funcionarioModel);
+        return funcionarioMapper.toDTO(funcionarioSalvo);
+    }
 }

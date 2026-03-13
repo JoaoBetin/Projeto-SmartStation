@@ -17,6 +17,6 @@ public class FuncionarioDTO {
 
     private Cargo cargo;
 
-    private boolean ativo;
+    private Boolean ativo;
 
 }
