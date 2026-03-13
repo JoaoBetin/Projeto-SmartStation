@@ -14,7 +14,7 @@ public class FuncionarioMapper {
         dto.setId(funcionario.getId());
         dto.setNome(funcionario.getNome());
         dto.setMatricula(funcionario.getMatricula());
-        dto.setAtivo(funcionario.isAtivo());
+        dto.setAtivo(funcionario.getAtivo());
 
         return dto;
     }
@@ -29,7 +29,7 @@ public class FuncionarioMapper {
         funcionario.setId(dto.getId());
         funcionario.setNome(dto.getNome());
         funcionario.setMatricula(dto.getMatricula());
-        funcionario.setAtivo(dto.isAtivo());
+        funcionario.setAtivo(dto.getAtivo());
 
         return funcionario;
     }
