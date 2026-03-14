@@ -1,0 +1,12 @@
+# Smart Station - Dependências Python
+# Instale com: pip install -r requirements.txt
+
+# Visão computacional e detecção de objetos
+opencv-python>=4.9.0
+ultralytics>=8.2.0     # YOLOv8
+
+# Comunicação com a API
+requests>=2.31.0
+
+# Utilitários
+python-dotenv>=1.0.0   # opcional: para carregar variáveis de ambiente de .env
