@@ -5,17 +5,22 @@ Responsável por detectar caixas de papelão via câmera,
 calcular os tempos de entrada, saída e permanência,
 e enviar os dados para a API Java.
 
+Fluxo de operação:
+    1. Inicia uma sessão no backend (POST /sessao/criar)
+    2. Detecta caixas via YOLO
+    3. Registra cada caixa no backend (POST /caixa/detectada)
+    4. Ao encerrar, atualiza a sessão com hora_fim e tempo_ocioso (PATCH /sessao/alterar/{id})
+
 Dependências:
-    pip install opencv-python ultralytics requests python-dotenv
+    pip install opencv-python ultralytics requests
 """
 
 import cv2
 import time
-import uuid
 import logging
 import requests
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, time as dtime
 from ultralytics import YOLO
 from dataclasses import dataclass, field
 from typing import Optional
@@ -34,98 +39,80 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Configurações gerais – ajuste conforme o ambiente
+# Configurações gerais
 # ---------------------------------------------------------------------------
 
-# Índice da câmera (0 = câmera padrão, ou caminho para arquivo de vídeo)
 CAMERA_SOURCE: int | str = 0
 
-# URL base da API Java
 API_BASE_URL = "http://localhost:8080"
 
-# Endpoint para registrar eventos de caixa
-API_ENDPOINT = f"{API_BASE_URL}/caixa/registrar"
+# ID do funcionário fixo para testes (Long no backend)
+FUNCIONARIO_ID: int = 1
 
-# ID do funcionário responsável pela bancada (fixo por enquanto)
-FUNCIONARIO_ID = 1
-
-# ── Parâmetros de confirmação de ENTRADA ──────────────────────────────────
+# ── Parâmetros de confirmação de ENTRADA ─────────────────────────────────
 
 # Número mínimo de frames CONSECUTIVOS com detecção para confirmar entrada.
-# Aumente este valor se ainda houver falsos positivos.
-# Recomendado: 8–15 para câmeras a 30 fps (≈ 0,3–0,5 s de presença contínua).
 MIN_FRAMES_TO_CONFIRM = 10
 
 # Confiança mínima do modelo YOLO para considerar uma detecção válida.
-# Detecções abaixo deste limiar são completamente ignoradas antes mesmo
-# de entrar na contagem de frames.
-# Recomendado: 0.55–0.70.
 MIN_CONFIDENCE = 0.60
 
-# Tempo mínimo (em segundos) que a caixa deve estar presente de forma
-# contínua para que a entrada seja confirmada.
-# Atua como segunda barreira além de MIN_FRAMES_TO_CONFIRM.
-# Útil para câmeras com fps variável.
+# Tempo mínimo (em segundos) de presença contínua para confirmar entrada.
 MIN_SECONDS_TO_CONFIRM = 1.5
 
-# Número máximo de frames SEM detecção permitidos dentro da janela de
-# confirmação antes de zerar o contador.
-# Define tolerância a falhas esparsas do modelo durante a fase de confirmação.
-# 0 = sem tolerância (qualquer frame sem detecção reinicia a contagem).
+# Frames perdidos tolerados durante a janela de confirmação.
 MAX_MISSED_FRAMES_DURING_CONFIRM = 2
 
 # ── Parâmetros de confirmação de SAÍDA ───────────────────────────────────
 
-# Tempo (em segundos) sem nenhuma detecção válida para confirmar que a
-# caixa saiu da bancada. Aumente se a câmera perder a caixa momentaneamente.
+# Tempo (em segundos) sem detecção para confirmar saída da caixa.
 BOX_ABSENCE_TIMEOUT = 4.0
 
-# Número mínimo de frames consecutivos SEM detecção para iniciar a
-# contagem do timeout de saída.
-# Evita que um único frame "vazio" (oclusão momentânea) dispare o timeout.
+# Frames consecutivos sem detecção para iniciar contagem de saída.
 MIN_ABSENT_FRAMES_TO_TIMEOUT = 5
 
 # ── Parâmetros de ociosidade ──────────────────────────────────────────────
 
-# Intervalo mínimo de ociosidade (segundos) para ser registrado no log.
+# Intervalo mínimo de ociosidade (segundos) para ser contabilizado.
 IDLE_MIN_SECONDS = 5.0
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Modelo treinado com o dataset da Universidade de Heidelberg
 YOLO_MODEL = os.path.join(BASE_DIR, "best.pt")
 
 # IDs de classe que representam caixa de papelão no modelo
 CARDBOARD_CLASS_IDS = [0]
 
-# Fuso horário lido automaticamente do sistema operacional (ex: Brasília = UTC-3)
+# Fuso horário local
 TZ_LOCAL = datetime.now().astimezone().tzinfo
 
 
 # ---------------------------------------------------------------------------
-# Estrutura de dados para uma caixa rastreada
+# Estrutura de dados — Caixa rastreada
 # ---------------------------------------------------------------------------
 
 @dataclass
 class TrackedBox:
-    """Representa uma caixa de papelão detectada e sendo monitorada."""
+    """
+    Representa uma caixa detectada sendo monitorada.
 
-    box_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    entry_time: Optional[datetime] = None        # Momento confirmado de entrada
-    exit_time: Optional[datetime] = None         # Momento confirmado de saída
+    Nota: o ID é gerado pelo backend (Long/auto-increment).
+    O campo backend_id é preenchido após o envio bem-sucedido à API.
+    """
 
-    # Timestamps internos de controle
-    first_seen: float = field(default_factory=time.time)   # Primeiro frame com detecção
-    last_seen: float = field(default_factory=time.time)    # Último frame com detecção válida
+    backend_id: Optional[int] = None           # ID retornado pelo backend (Long)
+    entry_time: Optional[datetime] = None      # Momento confirmado de entrada
+    exit_time: Optional[datetime] = None       # Momento confirmado de saída
 
-    # Contadores de frames
-    frames_detected: int = 0       # Frames válidos CONSECUTIVOS desde first_seen
-    frames_absent: int = 0         # Frames consecutivos SEM detecção (pós-confirmação)
-    missed_during_confirm: int = 0 # Frames perdidos dentro da janela de confirmação
+    # Controle interno
+    first_seen: float = field(default_factory=time.time)
+    last_seen: float = field(default_factory=time.time)
 
-    # Flags de estado
-    confirmed: bool = False        # Entrada confirmada (passou todos os critérios)
-    sent_to_api: bool = False      # Dados já enviados à API
+    frames_detected: int = 0
+    frames_absent: int = 0
+    missed_during_confirm: int = 0
+
+    confirmed: bool = False
+    sent_to_api: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -133,59 +120,175 @@ class TrackedBox:
 # ---------------------------------------------------------------------------
 
 class ApiClient:
-    """Encapsula o envio de dados para a API Java."""
+    """Encapsula toda comunicação com a API Java."""
 
-    def __init__(self, endpoint: str, timeout: int = 5):
-        self.endpoint = endpoint
+    def __init__(self, base_url: str, timeout: int = 5):
+        self.base_url = base_url
         self.timeout = timeout
 
-    def enviar_evento(self, box: TrackedBox) -> bool:
-        """
-        Serializa e envia os dados da caixa para a API.
+    # ── Sessão ────────────────────────────────────────────────────────
 
-        Payload:
-            {
-                "idCaixa": "<uuid>",
-                "horarioEntrada": "2025-01-01T10:00:00Z",
-                "horarioSaida":   "2025-01-01T10:05:00Z",
-                "funcionarioId":  1
-            }
+    def criar_sessao(self, funcionario_id: int) -> Optional[int]:
         """
-        if not box.entry_time or not box.exit_time:
-            logger.warning("[API] Tentativa de envio com dados incompletos. Ignorando.")
-            return False
+        Cria uma sessão no backend.
+
+        Payload (POST /sessao/criar):
+            {
+                "funcionarioModel": { "id": 1 },
+                "data": "2026-03-15",
+                "hora_inicio": "08:00:00",
+                "hora_fim": null,
+                "tempo_ocioso": null,
+                "total_caixas": 0
+            }
+
+        Retorna o ID da sessão criada (Long) ou None em caso de falha.
+        """
+        agora = datetime.now(TZ_LOCAL)
 
         payload = {
-            "idCaixa": box.box_id,
-            "horarioEntrada": box.entry_time.isoformat(),
-            "horarioSaida": box.exit_time.isoformat(),
-            "funcionarioId": FUNCIONARIO_ID,
+            "funcionarioModel": {"id": funcionario_id},
+            "data": agora.date().isoformat(),               # "2026-03-15"
+            "hora_inicio": agora.strftime("%H:%M:%S"),      # "08:00:00"
+            "hora_fim": None,
+            "tempo_ocioso": None,
+            "total_caixas": 0,
         }
 
         try:
             response = requests.post(
-                self.endpoint,
+                f"{self.base_url}/sessao/criar",
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            sessao_id = response.json().get("id")
+            logger.info("[API] Sessão criada | ID: %s", sessao_id)
+            return sessao_id
+
+        except requests.exceptions.ConnectionError:
+            logger.error("[API] Falha de conexão ao criar sessão.")
+        except requests.exceptions.Timeout:
+            logger.error("[API] Timeout ao criar sessão.")
+        except requests.exceptions.HTTPError as e:
+            logger.error("[API] Erro HTTP %s ao criar sessão: %s", e.response.status_code, e.response.text)
+        except Exception as e:
+            logger.exception("[API] Erro inesperado ao criar sessão: %s", e)
+
+        return None
+
+    def encerrar_sessao(self, sessao_id: int, hora_fim: datetime, tempo_ocioso_segundos: float) -> bool:
+        """
+        Atualiza a sessão com hora_fim e tempo_ocioso (PATCH /sessao/alterar/{id}).
+
+        O campo tempo_ocioso é do tipo LocalTime no backend, portanto
+        representa HH:mm:ss a partir da meia-noite — funciona bem para
+        períodos de ociosidade de até 23h59m59s por sessão.
+
+        Payload:
+            {
+                "hora_fim": "16:30:00",
+                "tempo_ocioso": "00:45:10"
+            }
+        """
+        # Converte segundos totais para HH:mm:ss
+        horas = int(tempo_ocioso_segundos // 3600)
+        minutos = int((tempo_ocioso_segundos % 3600) // 60)
+        segundos = int(tempo_ocioso_segundos % 60)
+        tempo_ocioso_str = f"{horas:02d}:{minutos:02d}:{segundos:02d}"
+
+        payload = {
+            "hora_fim": hora_fim.strftime("%H:%M:%S"),
+            "tempo_ocioso": tempo_ocioso_str,
+        }
+
+        try:
+            response = requests.patch(
+                f"{self.base_url}/sessao/alterar/{sessao_id}",
                 json=payload,
                 timeout=self.timeout,
             )
             response.raise_for_status()
             logger.info(
-                "[API] Evento enviado | ID: %s | Status: %d",
-                box.box_id,
-                response.status_code,
+                "[API] Sessão encerrada | ID: %s | hora_fim: %s | tempo_ocioso: %s",
+                sessao_id,
+                payload["hora_fim"],
+                tempo_ocioso_str,
             )
             return True
 
         except requests.exceptions.ConnectionError:
-            logger.error("[API] Falha de conexão com %s.", self.endpoint)
+            logger.error("[API] Falha de conexão ao encerrar sessão %s.", sessao_id)
         except requests.exceptions.Timeout:
-            logger.error("[API] Timeout ao alcançar %s.", self.endpoint)
+            logger.error("[API] Timeout ao encerrar sessão %s.", sessao_id)
         except requests.exceptions.HTTPError as e:
-            logger.error("[API] Erro HTTP %s: %s", e.response.status_code, e.response.text)
+            logger.error("[API] Erro HTTP %s ao encerrar sessão: %s", e.response.status_code, e.response.text)
         except Exception as e:
-            logger.exception("[API] Erro inesperado: %s", e)
+            logger.exception("[API] Erro inesperado ao encerrar sessão: %s", e)
 
         return False
+
+    # ── Caixa ─────────────────────────────────────────────────────────
+
+    def registrar_caixa(self, box: "TrackedBox", sessao_id: int) -> Optional[int]:
+        """
+        Registra uma caixa detectada no backend (POST /caixa/detectada).
+
+        O endpoint já:
+            - Calcula tempo_detectado automaticamente (fim - início em segundos)
+            - Incrementa total_caixas na sessão
+
+        Payload:
+            {
+                "sessaoId": 1,
+                "inicio_deteccao": "2026-03-15T08:00:00",
+                "fim_deteccao":    "2026-03-15T08:02:30"
+            }
+
+        Retorna o ID da caixa criada (Long) ou None em caso de falha.
+
+        Nota: o campo "id" NÃO é enviado — é gerado automaticamente
+        pelo banco (GenerationType.IDENTITY no backend).
+        """
+        if not box.entry_time or not box.exit_time:
+            logger.warning("[API] Tentativa de envio com dados incompletos. Ignorando.")
+            return None
+
+        payload = {
+            "sessaoId": sessao_id,
+            # LocalDateTime no backend espera "yyyy-MM-ddTHH:mm:ss" (sem timezone)
+            "inicio_deteccao": box.entry_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "fim_deteccao": box.exit_time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+
+        try:
+            response = requests.post(
+                f"{self.base_url}/caixa/detectada",
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            caixa_id = response.json().get("id")
+            logger.info(
+                "[API] Caixa registrada | ID backend: %s | Sessão: %s | "
+                "Entrada: %s | Saída: %s",
+                caixa_id,
+                sessao_id,
+                payload["inicio_deteccao"],
+                payload["fim_deteccao"],
+            )
+            return caixa_id
+
+        except requests.exceptions.ConnectionError:
+            logger.error("[API] Falha de conexão ao registrar caixa.")
+        except requests.exceptions.Timeout:
+            logger.error("[API] Timeout ao registrar caixa.")
+        except requests.exceptions.HTTPError as e:
+            logger.error("[API] Erro HTTP %s ao registrar caixa: %s", e.response.status_code, e.response.text)
+        except Exception as e:
+            logger.exception("[API] Erro inesperado ao registrar caixa: %s", e)
+
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -196,17 +299,10 @@ class BoxDetector:
     """
     Gerencia o loop de captura, detecção e rastreamento de caixas de papelão.
 
-    Fluxo de confirmação de ENTRADA (todas as condições devem ser satisfeitas):
-        1. Confiança da detecção >= MIN_CONFIDENCE.
-        2. Frames consecutivos válidos >= MIN_FRAMES_TO_CONFIRM.
-        3. Tempo contínuo de presença >= MIN_SECONDS_TO_CONFIRM.
-        4. Frames perdidos durante a janela <= MAX_MISSED_FRAMES_DURING_CONFIRM.
-           Se exceder, o contador é zerado e o processo reinicia.
-
-    Fluxo de confirmação de SAÍDA:
-        1. Frames consecutivos sem detecção válida >= MIN_ABSENT_FRAMES_TO_TIMEOUT.
-        2. E tempo sem detecção >= BOX_ABSENCE_TIMEOUT.
-           Ambas as condições devem ser satisfeitas simultaneamente.
+    Ciclo de vida:
+        1. __init__: carrega YOLO, abre câmera, cria sessão no backend.
+        2. run():    loop principal de captura e rastreamento.
+        3. _finalize(): encerra sessão no backend com hora_fim e tempo_ocioso.
     """
 
     def __init__(self, camera_source=CAMERA_SOURCE):
@@ -218,14 +314,30 @@ class BoxDetector:
         if not self.cap.isOpened():
             raise RuntimeError(f"Não foi possível abrir a câmera/vídeo: {camera_source}")
 
-        self.api_client = ApiClient(API_ENDPOINT)
+        self.api_client = ApiClient(API_BASE_URL)
 
-        # Caixa sendo rastreada no momento (apenas uma por vez neste protótipo)
+        # ── Sessão ────────────────────────────────────────────────────
+        # A sessão é criada imediatamente ao iniciar o detector.
+        # O ID retornado pelo backend é armazenado e usado em todas as
+        # chamadas subsequentes de caixa.
+        self.sessao_id: Optional[int] = self.api_client.criar_sessao(FUNCIONARIO_ID)
+
+        if self.sessao_id is None:
+            raise RuntimeError(
+                "Não foi possível criar a sessão no backend. "
+                "Verifique se a API está rodando em " + API_BASE_URL
+            )
+
+        self.sessao_inicio = datetime.now(TZ_LOCAL)
+        self.total_caixas: int = 0  # contagem local (espelho do backend)
+
+        # ── Rastreamento ──────────────────────────────────────────────
         self.current_box: Optional[TrackedBox] = None
 
-        # Controle de ociosidade
+        # ── Ociosidade ────────────────────────────────────────────────
         self.idle_start: Optional[float] = None
         self.total_idle_seconds: float = 0.0
+        self._start_idle_timer()   # bancada começa ociosa
 
     # ------------------------------------------------------------------
     # Loop principal
@@ -233,7 +345,11 @@ class BoxDetector:
 
     def run(self):
         """Inicia o loop de captura e detecção. Pressione 'q' para encerrar."""
-        logger.info("Smart Station iniciado. Pressione 'q' para encerrar.")
+        logger.info(
+            "Smart Station iniciado | Sessão: %s | Funcionário: %s | Pressione 'q' para encerrar.",
+            self.sessao_id,
+            FUNCIONARIO_ID,
+        )
 
         try:
             while True:
@@ -260,12 +376,7 @@ class BoxDetector:
     # ------------------------------------------------------------------
 
     def _detect_boxes(self, frame) -> list[dict]:
-        """
-        Executa inferência YOLO e filtra por classe e confiança mínima.
-
-        A filtragem por MIN_CONFIDENCE aqui é a PRIMEIRA barreira contra
-        falsos positivos — detecções fracas nunca chegam ao rastreador.
-        """
+        """Executa inferência YOLO e filtra por classe e confiança mínima."""
         results = self.model(frame, verbose=False)
         boxes = []
 
@@ -276,8 +387,6 @@ class BoxDetector:
                     continue
 
                 confidence = float(box.conf[0])
-
-                # ── Barreira 1: confiança mínima ──────────────────────
                 if confidence < MIN_CONFIDENCE:
                     logger.debug(
                         "[YOLO] Detecção descartada: confiança %.2f < %.2f",
@@ -299,22 +408,11 @@ class BoxDetector:
     # ------------------------------------------------------------------
 
     def _update_tracking(self, detections: list[dict]):
-        """
-        Atualiza o estado de rastreamento para o frame atual.
-
-        Casos tratados:
-            A) Sem caixa rastreada + nova detecção válida → inicia candidata.
-            B) Candidata em confirmação + detecção → acumula frames.
-               B1) Muitos frames perdidos → reinicia candidata (falso positivo).
-               B2) Todos os critérios atingidos → confirma entrada.
-            C) Caixa confirmada + detecção → atualiza last_seen, zera ausência.
-            D) Caixa rastreada + sem detecção → acumula frames ausentes.
-               D1) Limiar de saída atingido → registra saída.
-        """
+        """Atualiza o estado de rastreamento para o frame atual."""
         box_detected_now = len(detections) > 0
         now = time.time()
 
-        # ── Caso A: Nenhuma caixa rastreada, nova detecção aparece ────
+        # Nenhuma caixa rastreada, nova detecção aparece
         if self.current_box is None:
             if box_detected_now:
                 self.current_box = TrackedBox()
@@ -325,58 +423,40 @@ class BoxDetector:
                 self._stop_idle_timer()
             return
 
-        # A partir daqui, self.current_box existe.
-
-        # ── Caso B / C: Caixa rastreada E detecção presente ──────────
+        # Caixa rastreada E detecção presente
         if box_detected_now:
             self.current_box.last_seen = now
-            self.current_box.frames_absent = 0  # zera contador de ausência
+            self.current_box.frames_absent = 0
 
             if not self.current_box.confirmed:
-                # Fase de confirmação de entrada
                 self.current_box.frames_detected += 1
                 self._try_confirm_entry(now)
-            # Se já confirmada, apenas atualiza last_seen (já feito acima)
             return
 
-        # ── Caso D: Caixa rastreada MAS sem detecção neste frame ─────
+        # Caixa rastreada MAS sem detecção neste frame
         self.current_box.frames_absent += 1
 
         if not self.current_box.confirmed:
-            # Durante a confirmação, frames perdidos consomem a tolerância
             self.current_box.missed_during_confirm += 1
 
             if self.current_box.missed_during_confirm > MAX_MISSED_FRAMES_DURING_CONFIRM:
-                # ── B1: Tolerância esgotada → era falso positivo, reinicia ──
                 logger.debug(
-                    "[TRACKER] Candidata descartada: %d frames perdidos durante confirmação "
-                    "(máx. %d). Reiniciando.",
+                    "[TRACKER] Candidata descartada: %d frames perdidos durante confirmação.",
                     self.current_box.missed_during_confirm,
-                    MAX_MISSED_FRAMES_DURING_CONFIRM,
                 )
                 self.current_box = None
                 self._start_idle_timer()
             return
 
-        # Caixa já confirmada: verifica se atingiu o limiar de saída
+        # Caixa confirmada: verifica limiar de saída
         elapsed_without_detection = now - self.current_box.last_seen
 
-        both_conditions_met = (
-            self.current_box.frames_absent >= MIN_ABSENT_FRAMES_TO_TIMEOUT
-            and elapsed_without_detection >= BOX_ABSENCE_TIMEOUT
-        )
-
-        if both_conditions_met:
+        if (self.current_box.frames_absent >= MIN_ABSENT_FRAMES_TO_TIMEOUT
+                and elapsed_without_detection >= BOX_ABSENCE_TIMEOUT):
             self._register_box_exit()
 
     def _try_confirm_entry(self, now: float):
-        """
-        Verifica se a caixa candidata atende TODOS os critérios de entrada.
-
-        Critérios (todas devem ser verdadeiras):
-            1. frames_detected >= MIN_FRAMES_TO_CONFIRM
-            2. Tempo desde first_seen >= MIN_SECONDS_TO_CONFIRM
-        """
+        """Verifica se a caixa candidata atende todos os critérios de entrada."""
         box = self.current_box
 
         frames_ok = box.frames_detected >= MIN_FRAMES_TO_CONFIRM
@@ -386,9 +466,9 @@ class BoxDetector:
             box.confirmed = True
             box.entry_time = datetime.now(TZ_LOCAL)
             logger.info(
-                "[ENTRADA] CAIXA CONFIRMADA | ID: %s | Horário: %s | "
+                "[ENTRADA] CAIXA CONFIRMADA | Sessão: %s | Horário: %s | "
                 "Frames: %d | Tempo de confirmação: %.2fs",
-                box.box_id,
+                self.sessao_id,
                 box.entry_time.isoformat(),
                 box.frames_detected,
                 now - box.first_seen,
@@ -401,7 +481,12 @@ class BoxDetector:
             )
 
     def _register_box_exit(self):
-        """Registra a saída da caixa, calcula permanência e envia à API."""
+        """
+        Registra a saída da caixa, calcula permanência e envia à API.
+
+        Após o envio bem-sucedido, armazena o ID retornado pelo backend
+        em box.backend_id para rastreabilidade.
+        """
         box = self.current_box
         if box is None:
             return
@@ -416,16 +501,26 @@ class BoxDetector:
         permanencia = (box.exit_time - box.entry_time).total_seconds()
 
         logger.info(
-            "[SAÍDA] CAIXA SAIU | ID: %s | Entrada: %s | Saída: %s | Permanência: %.2fs",
-            box.box_id,
+            "[SAÍDA] CAIXA SAIU | Sessão: %s | Entrada: %s | Saída: %s | Permanência: %.2fs",
+            self.sessao_id,
             box.entry_time.isoformat(),
             box.exit_time.isoformat(),
             permanencia,
         )
 
-        success = self.api_client.enviar_evento(box)
-        if not success:
-            logger.warning("[TRACKER] Falha no envio à API. Dados perdidos — ID: %s.", box.box_id)
+        # Envia à API — o backend incrementa total_caixas na sessão automaticamente
+        caixa_id = self.api_client.registrar_caixa(box, self.sessao_id)
+
+        if caixa_id is not None:
+            box.backend_id = caixa_id          # Long retornado pelo backend
+            box.sent_to_api = True
+            self.total_caixas += 1             # espelho local
+            logger.info("[TRACKER] Caixa registrada no backend | ID: %d", caixa_id)
+        else:
+            logger.warning(
+                "[TRACKER] Falha no envio à API. Dados perdidos para a sessão %s.",
+                self.sessao_id,
+            )
 
         self.current_box = None
         self._start_idle_timer()
@@ -472,8 +567,7 @@ class BoxDetector:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2,
             )
 
-        # ── Painel de status ──────────────────────────────────────────
-        status_lines = []
+        status_lines = [f"Sessao: #{self.sessao_id} | Funcionario: #{FUNCIONARIO_ID}"]
 
         if self.current_box and self.current_box.confirmed:
             status_lines.append("STATUS: CAIXA NA BANCADA")
@@ -494,16 +588,19 @@ class BoxDetector:
                 status_lines.append(f"Ocioso ha: {idle_elapsed:.1f}s")
 
         status_lines.append(f"Ociosidade total: {self.total_idle_seconds:.1f}s")
+        status_lines.append(f"Caixas na sessao: {self.total_caixas}")
 
         overlay = annotated.copy()
         panel_h = 20 + len(status_lines) * 22
-        cv2.rectangle(overlay, (0, 0), (340, panel_h), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (0, 0), (360, panel_h), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.5, annotated, 0.5, 0, annotated)
 
         for i, line in enumerate(status_lines):
             color = (0, 255, 100) if "CAIXA" in line else (200, 200, 200)
             if "CONFIRMANDO" in line:
                 color = (0, 200, 255)
+            if "Sessao" in line:
+                color = (255, 200, 0)
             cv2.putText(
                 annotated, line,
                 (8, 22 + i * 22),
@@ -517,6 +614,13 @@ class BoxDetector:
     # ------------------------------------------------------------------
 
     def _finalize(self):
+        """
+        Encerra a sessão:
+            1. Registra saída de caixa em aberto (se houver).
+            2. Para o timer de ociosidade.
+            3. Atualiza a sessão no backend com hora_fim e tempo_ocioso.
+        """
+        # Registra eventual caixa que ainda estava sendo rastreada
         if self.current_box and self.current_box.confirmed:
             logger.info("[FINALIZANDO] Registrando saída de caixa em aberto.")
             self._register_box_exit()
@@ -525,8 +629,22 @@ class BoxDetector:
         self.cap.release()
         cv2.destroyAllWindows()
 
+        # Atualiza sessão no backend
+        hora_fim = datetime.now(TZ_LOCAL)
+        self.api_client.encerrar_sessao(
+            sessao_id=self.sessao_id,
+            hora_fim=hora_fim,
+            tempo_ocioso_segundos=self.total_idle_seconds,
+        )
+
+        duracao_total = (hora_fim - self.sessao_inicio).total_seconds()
+
         logger.info(
-            "Sessão encerrada | Tempo total ocioso: %.2fs",
+            "Sessão encerrada | ID: %s | Duração: %.0fs | "
+            "Caixas processadas: %d | Tempo ocioso: %.2fs",
+            self.sessao_id,
+            duracao_total,
+            self.total_caixas,
             self.total_idle_seconds,
         )
 
