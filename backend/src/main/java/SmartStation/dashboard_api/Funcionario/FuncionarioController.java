@@ -19,8 +19,7 @@ public class FuncionarioController {
     public ResponseEntity<?> listarTodos(){
         List<FuncionarioDTO> funcionarioDTOList = funcionarioService.listarFuncionarios();
         if(!funcionarioDTOList.isEmpty()){
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .body(funcionarioDTOList);
+            return ResponseEntity.ok(funcionarioDTOList);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Nenhum funcionario registrado");
@@ -31,11 +30,18 @@ public class FuncionarioController {
         FuncionarioDTO funcionarioDTO = funcionarioService.listarFuncionariosID(id);
 
         if(funcionarioDTO != null){
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .body(funcionarioDTO);
+            return ResponseEntity.ok(funcionarioDTO);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Funcionario nao encontrado");
+    }
+
+    @PostMapping("/criar")
+    public ResponseEntity<FuncionarioDTO> criarFuncionario(@RequestBody FuncionarioDTO funcionarioDTO){
+        FuncionarioDTO funcionario = funcionarioService.criarFuncionario(funcionarioDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(funcionario);
+
     }
 
     @DeleteMapping("/deletar/{id}")
@@ -52,7 +58,7 @@ public class FuncionarioController {
     }
 
     @PatchMapping("/alterar/{id}")
-    public ResponseEntity<?> alterarFuncionario(@PathVariable Long id, @RequestParam FuncionarioDTO funcionarioUser){
+    public ResponseEntity<?> alterarFuncionario(@PathVariable Long id, @RequestBody FuncionarioDTO funcionarioUser){
         FuncionarioDTO funcionarioDTO = funcionarioService.alterarFuncionario(id, funcionarioUser);
         return ResponseEntity.ok(funcionarioDTO);
     }

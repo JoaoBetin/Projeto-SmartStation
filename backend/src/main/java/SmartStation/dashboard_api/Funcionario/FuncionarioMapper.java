@@ -15,11 +15,12 @@ public class FuncionarioMapper {
         dto.setNome(funcionario.getNome());
         dto.setMatricula(funcionario.getMatricula());
         dto.setAtivo(funcionario.getAtivo());
+        dto.setSessaoModels(funcionario.getSessaoModels());
 
         return dto;
     }
 
-    public static FuncionarioModel toEntity(FuncionarioDTO dto) {
+    public FuncionarioModel toEntity(FuncionarioDTO dto) {
         if (dto == null) {
             return null;
         }
@@ -30,6 +31,7 @@ public class FuncionarioMapper {
         funcionario.setNome(dto.getNome());
         funcionario.setMatricula(dto.getMatricula());
         funcionario.setAtivo(dto.getAtivo());
+        funcionario.setSessaoModels(dto.getSessaoModels());
 
         return funcionario;
     }

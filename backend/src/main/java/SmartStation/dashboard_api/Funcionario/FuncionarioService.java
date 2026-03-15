@@ -32,6 +32,13 @@ public class FuncionarioService {
         return funcionarioModel.map(funcionarioMapper::toDTO).orElse(null);
     }
 
+    // Criar
+    public FuncionarioDTO criarFuncionario(FuncionarioDTO funcionarioDTO){
+        FuncionarioModel funcionarioModel = funcionarioMapper.toEntity(funcionarioDTO);
+        FuncionarioModel funcionarioSalvo = funcionarioRepository.save(funcionarioModel);
+        return funcionarioMapper.toDTO(funcionarioSalvo);
+    }
+
     // Deletar
     public void deletarFuncionario(Long id){
         funcionarioRepository.deleteById(id);
@@ -56,6 +63,10 @@ public class FuncionarioService {
 
         if(funcionarioDTO.getCargo() != null){
             funcionarioModel.setCargo(funcionarioDTO.getCargo());
+        }
+
+        if(funcionarioDTO.getSessaoModels() != null){
+            funcionarioModel.setSessaoModels(funcionarioDTO.getSessaoModels());
         }
 
         FuncionarioModel funcionarioSalvo = funcionarioRepository.save(funcionarioModel);

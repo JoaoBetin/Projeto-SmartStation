@@ -1,8 +1,11 @@
 package SmartStation.dashboard_api.Funcionario;
 
+import SmartStation.dashboard_api.Sessao.SessaoModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,4 +22,5 @@ public class FuncionarioDTO {
 
     private Boolean ativo;
 
+    private List<SessaoModel> sessaoModels;
 }
