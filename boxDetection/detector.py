@@ -15,7 +15,7 @@ import uuid
 import logging
 import requests
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ultralytics import YOLO
 from dataclasses import dataclass, field
 from typing import Optional
@@ -97,6 +97,9 @@ YOLO_MODEL = os.path.join(BASE_DIR, "best.pt")
 
 # IDs de classe que representam caixa de papelão no modelo
 CARDBOARD_CLASS_IDS = [0]
+
+# Fuso horário lido automaticamente do sistema operacional (ex: Brasília = UTC-3)
+TZ_LOCAL = datetime.now().astimezone().tzinfo
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +246,7 @@ class BoxDetector:
                 self._update_tracking(detections)
 
                 annotated = self._annotate_frame(frame, detections)
-                cv2.imshow("Smart Station - Detecção de Caixas", annotated)
+                cv2.imshow("Smart Station", annotated)
 
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     logger.info("Encerrando por comando do usuário.")
@@ -381,9 +384,9 @@ class BoxDetector:
 
         if frames_ok and time_ok:
             box.confirmed = True
-            box.entry_time = datetime.now(timezone.utc)
+            box.entry_time = datetime.now(TZ_LOCAL)
             logger.info(
-                "[ENTRADA] ✔ Caixa confirmada | ID: %s | Horário: %s | "
+                "[ENTRADA] CAIXA CONFIRMADA | ID: %s | Horário: %s | "
                 "Frames: %d | Tempo de confirmação: %.2fs",
                 box.box_id,
                 box.entry_time.isoformat(),
@@ -409,11 +412,11 @@ class BoxDetector:
             self._start_idle_timer()
             return
 
-        box.exit_time = datetime.now(timezone.utc)
+        box.exit_time = datetime.now(TZ_LOCAL)
         permanencia = (box.exit_time - box.entry_time).total_seconds()
 
         logger.info(
-            "[SAÍDA] ✔ Caixa saiu | ID: %s | Entrada: %s | Saída: %s | Permanência: %.2fs",
+            "[SAÍDA] CAIXA SAIU | ID: %s | Entrada: %s | Saída: %s | Permanência: %.2fs",
             box.box_id,
             box.entry_time.isoformat(),
             box.exit_time.isoformat(),
