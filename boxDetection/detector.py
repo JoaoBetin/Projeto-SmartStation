@@ -14,6 +14,7 @@ import time
 import uuid
 import logging
 import requests
+import os
 from datetime import datetime, timezone
 from ultralytics import YOLO
 from dataclasses import dataclass, field
@@ -53,20 +54,17 @@ FUNCIONARIO_ID = 1
 MIN_FRAMES_TO_CONFIRM = 3
 
 # Tempo (segundos) sem detecção para considerar que a caixa saiu
-BOX_ABSENCE_TIMEOUT = 2.0
+BOX_ABSENCE_TIMEOUT = 3.0
 
 # Intervalo mínimo de ociosidade (segundos) para ser registrado
 IDLE_MIN_SECONDS = 5.0
 
-# Modelo YOLO a utilizar — 'yolov8n.pt' é leve e roda em CPU
-YOLO_MODEL = "yolov8n.pt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Classes do COCO que o YOLO reconhece como "caixa" ou objeto relevante
-# 73 = "book", 47 = "cup", mas a melhor para papelão é treinar um modelo
-# customizado. Para protótipo usamos a classe 0 (person) apenas como
-# demonstração de rastreamento — substitua pelas classes corretas.
-# Classe sugerida após fine-tuning: defina CARDBOARD_CLASS_IDS = [<seu_id>]
-CARDBOARD_CLASS_IDS = [73]  # 73 = "book" como proxy; ajuste após treino
+# Inserindo o modelo treinado com o dataset da Universidade de Heidelberg
+YOLO_MODEL = os.path.join(BASE_DIR, "best.pt")
+
+CARDBOARD_CLASS_IDS = [0] 
 
 
 # ---------------------------------------------------------------------------
