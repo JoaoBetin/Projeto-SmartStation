@@ -35,7 +35,7 @@ Além do cronômetro de processo, o sistema detecta o **tempo de ociosidade** da
   </tr>
   <tr>
     <td><b>Visão Computacional</b></td>
-    <td>Python</td>
+    <td>Python + YOLOv8</td>
     <td>Processamento da imagem da câmera e lógica de detecção de movimento/objetos.</td>
   </tr>
   <tr>
@@ -71,3 +71,42 @@ git clone [https://github.com/seu-usuario/smart-station.git](https://github.com/
 
 # Acesse a pasta do projeto
 cd smart-station
+```
+---
+
+### 📦 Download do Modelo
+
+O modelo treinado para detecção de caixas de papelão está disponível para download no link abaixo:
+
+> 🔗 **[Baixar modelo (Google Drive)](https://drive.google.com/file/d/1ORDBkFxF88z4NUGfg5hum9xog4akT32U/view?usp=sharing)**
+
+Após o download, **coloque o arquivo do modelo na pasta `boxDetection/`** dentro do repositório:
+
+```
+Projeto-SmartStation/
+└── boxDetection/
+    └── best.pt    ← coloque o arquivo aqui
+```
+
+---
+
+### ⚙️ Configuração e Execução do Módulo Python
+
+#### Pré-requisitos
+
+- Python 3.10 ou superior
+- `pip` atualizado
+- Câmera conectada ou arquivo de vídeo para teste
+
+#### 1. Instale as dependências
+
+```bash
+cd vision
+pip install -r requirements.txt
+```
+
+> As principais bibliotecas utilizadas são `ultralytics` (YOLOv8), `opencv-python` e `requests`.
+
+#### 2. Posicione o modelo
+
+Certifique-se de que o arquivo `best.pt` (baixado no link acima) está em `boxDetection/best.pt`.
