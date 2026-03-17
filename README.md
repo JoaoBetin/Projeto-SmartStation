@@ -101,7 +101,6 @@ Projeto-SmartStation/
 #### 1. Instale as dependências
 
 ```bash
-cd vision
 pip install -r requirements.txt
 ```
 
