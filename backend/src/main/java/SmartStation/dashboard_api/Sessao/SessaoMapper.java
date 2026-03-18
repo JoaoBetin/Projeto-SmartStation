@@ -19,6 +19,7 @@ public class SessaoMapper {
         dto.setHora_fim(model.getHora_fim());
         dto.setTempo_ocioso(model.getTempo_ocioso());
         dto.setTotal_caixas(model.getTotal_caixas());
+        dto.setAtiva(model.getAtiva());
 
         return dto;
     }
@@ -37,6 +38,7 @@ public class SessaoMapper {
         model.setHora_fim(dto.getHora_fim());
         model.setTempo_ocioso(dto.getTempo_ocioso());
         model.setTotal_caixas(dto.getTotal_caixas());
+        model.setAtiva(dto.getAtiva());
 
         return model;
     }

@@ -17,6 +17,8 @@ public class SessaoDTO {
 
     private FuncionarioModel funcionarioModel;
 
+    private Boolean ativa;
+
     private LocalDate data;
 
     private LocalTime hora_inicio;

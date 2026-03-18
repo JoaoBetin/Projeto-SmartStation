@@ -26,6 +26,8 @@ public class SessaoModel {
     @JoinColumn(name = "funcionario_id")
     private FuncionarioModel funcionarioModel;
 
+    private Boolean ativa;
+
     private LocalDate data;
 
     private LocalTime hora_inicio;

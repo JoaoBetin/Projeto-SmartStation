@@ -60,6 +60,10 @@ public class SessaoService {
             sessaoModel.setData(sessaoDTO.getData());
         }
 
+        if(sessaoDTO.getAtiva() != null){
+            sessaoModel.setAtiva(sessaoDTO.getAtiva());
+        }
+
         if(sessaoDTO.getHora_inicio() != null){
             sessaoModel.setHora_inicio(sessaoDTO.getHora_inicio());
         }
