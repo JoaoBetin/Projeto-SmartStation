@@ -5,12 +5,6 @@ Responsável por detectar caixas de papelão via câmera,
 calcular os tempos de entrada, saída e permanência,
 e enviar os dados para a API Java.
 
-Fluxo de operação:
-    1. Inicia uma sessão no backend (POST /sessao/criar)
-    2. Detecta caixas via YOLO
-    3. Registra cada caixa no backend (POST /caixa/detectada)
-    4. Ao encerrar, atualiza a sessão com hora_fim e tempo_ocioso (PATCH /sessao/alterar/{id})
-
 Dependências:
     pip install opencv-python ultralytics requests
 """
@@ -79,7 +73,7 @@ IDLE_MIN_SECONDS = 5.0
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 YOLO_MODEL = os.path.join(BASE_DIR, "best.pt")
 
-# IDs de classe que representam caixa de papelão no modelo
+# IDs de classe que representam caixas no modelo
 CARDBOARD_CLASS_IDS = [0]
 
 # Fuso horário local
@@ -131,25 +125,14 @@ class ApiClient:
     def criar_sessao(self, funcionario_id: int) -> Optional[int]:
         """
         Cria uma sessão no backend.
-
-        Payload (POST /sessao/criar):
-            {
-                "funcionarioModel": { "id": 1 },
-                "data": "2026-03-15",
-                "hora_inicio": "08:00:00",
-                "hora_fim": null,
-                "tempo_ocioso": null,
-                "total_caixas": 0
-            }
-
         Retorna o ID da sessão criada (Long) ou None em caso de falha.
         """
         agora = datetime.now(TZ_LOCAL)
 
         payload = {
             "funcionarioModel": {"id": funcionario_id},
-            "data": agora.date().isoformat(),               # "2026-03-15"
-            "hora_inicio": agora.strftime("%H:%M:%S"),      # "08:00:00"
+            "data": agora.date().isoformat(),               
+            "hora_inicio": agora.strftime("%H:%M:%S"),      
             "hora_fim": None,
             "tempo_ocioso": None,
             "total_caixas": 0,
@@ -179,17 +162,7 @@ class ApiClient:
 
     def encerrar_sessao(self, sessao_id: int, hora_fim: datetime, tempo_ocioso_segundos: float) -> bool:
         """
-        Atualiza a sessão com hora_fim e tempo_ocioso (PATCH /sessao/alterar/{id}).
-
-        O campo tempo_ocioso é do tipo LocalTime no backend, portanto
-        representa HH:mm:ss a partir da meia-noite — funciona bem para
-        períodos de ociosidade de até 23h59m59s por sessão.
-
-        Payload:
-            {
-                "hora_fim": "16:30:00",
-                "tempo_ocioso": "00:45:10"
-            }
+        Atualiza a sessão com hora_fim e tempo_ocioso.
         """
         # Converte segundos totais para HH:mm:ss
         horas = int(tempo_ocioso_segundos // 3600)
@@ -232,19 +205,11 @@ class ApiClient:
 
     def registrar_caixa(self, box: "TrackedBox", sessao_id: int) -> Optional[int]:
         """
-        Registra uma caixa detectada no backend (POST /caixa/detectada).
+        Registra uma caixa detectada no backend.
 
         O endpoint já:
             - Calcula tempo_detectado automaticamente (fim - início em segundos)
             - Incrementa total_caixas na sessão
-
-        Payload:
-            {
-                "sessaoId": 1,
-                "inicio_deteccao": "2026-03-15T08:00:00",
-                "fim_deteccao":    "2026-03-15T08:02:30"
-            }
-
         Retorna o ID da caixa criada (Long) ou None em caso de falha.
 
         Nota: o campo "id" NÃO é enviado — é gerado automaticamente
@@ -512,9 +477,9 @@ class BoxDetector:
         caixa_id = self.api_client.registrar_caixa(box, self.sessao_id)
 
         if caixa_id is not None:
-            box.backend_id = caixa_id          # Long retornado pelo backend
+            box.backend_id = caixa_id          
             box.sent_to_api = True
-            self.total_caixas += 1             # espelho local
+            self.total_caixas += 1            
             logger.info("[TRACKER] Caixa registrada no backend | ID: %d", caixa_id)
         else:
             logger.warning(
