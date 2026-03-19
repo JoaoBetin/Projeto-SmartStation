@@ -1,6 +1,7 @@
 package SmartStation.dashboard_api.Sessao;
 
 import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class SessaoModel {
 
     @ManyToOne
     @JoinColumn(name = "funcionario_id")
+    @JsonIgnore
     private FuncionarioModel funcionarioModel;
 
     private Boolean ativa;
