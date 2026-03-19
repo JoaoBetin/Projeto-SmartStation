@@ -36,6 +36,16 @@ public class FuncionarioController {
                 .body("Funcionario nao encontrado");
     }
 
+    @GetMapping("/listarAtivos")
+    public ResponseEntity<?> listarAtivos(){
+        List<FuncionarioDTO> funcionarioDTOList = funcionarioService.listarAtivos();
+        if(!funcionarioDTOList.isEmpty()){
+            return ResponseEntity.ok(funcionarioDTOList);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Nenhum funcionario ativo");
+    }
+
     @PostMapping("/criar")
     public ResponseEntity<FuncionarioDTO> criarFuncionario(@RequestBody FuncionarioDTO funcionarioDTO){
         FuncionarioDTO funcionario = funcionarioService.criarFuncionario(funcionarioDTO);

@@ -32,6 +32,15 @@ public class FuncionarioService {
         return funcionarioModel.map(funcionarioMapper::toDTO).orElse(null);
     }
 
+    // Listar Ativos
+    public List<FuncionarioDTO> listarAtivos(){
+        List<FuncionarioModel> funcionarioModelList = funcionarioRepository.findDistinctBySessaoModelsAtivaTrue();
+
+        return funcionarioModelList.stream()
+                .map(funcionarioMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
     // Criar
     public FuncionarioDTO criarFuncionario(FuncionarioDTO funcionarioDTO){
         FuncionarioModel funcionarioModel = funcionarioMapper.toEntity(funcionarioDTO);
