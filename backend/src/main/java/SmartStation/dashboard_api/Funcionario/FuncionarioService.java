@@ -41,6 +41,13 @@ public class FuncionarioService {
                 .collect(Collectors.toList());
     }
 
+    // Verificar se está ativo
+    public boolean verificarAtivo(Long id){
+        boolean ativo = funcionarioRepository.existsByIdAndSessaoModelsAtivaTrue(id);
+
+        return ativo;
+    }
+
     // Criar
     public FuncionarioDTO criarFuncionario(FuncionarioDTO funcionarioDTO){
         FuncionarioModel funcionarioModel = funcionarioMapper.toEntity(funcionarioDTO);

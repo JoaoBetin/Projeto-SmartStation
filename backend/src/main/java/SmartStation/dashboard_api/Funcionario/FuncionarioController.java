@@ -46,6 +46,11 @@ public class FuncionarioController {
                 .body("Nenhum funcionario ativo");
     }
 
+    @GetMapping("/verificarAtivo/{id}")
+    public ResponseEntity<?> verificarAtivo(@PathVariable Long id){
+        return ResponseEntity.ok(funcionarioService.verificarAtivo(id));
+    }
+
     @PostMapping("/criar")
     public ResponseEntity<FuncionarioDTO> criarFuncionario(@RequestBody FuncionarioDTO funcionarioDTO){
         FuncionarioDTO funcionario = funcionarioService.criarFuncionario(funcionarioDTO);

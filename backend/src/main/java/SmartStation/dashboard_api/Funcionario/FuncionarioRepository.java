@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface FuncionarioRepository extends JpaRepository<FuncionarioModel, Long> {
     List<FuncionarioModel> findDistinctBySessaoModelsAtivaTrue();
+
+    boolean existsByIdAndSessaoModelsAtivaTrue(Long id);
 }
