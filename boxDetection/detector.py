@@ -136,6 +136,7 @@ class ApiClient:
             "hora_fim": None,
             "tempo_ocioso": None,
             "total_caixas": 0,
+            "ativa": True
         }
 
         try:
@@ -173,6 +174,7 @@ class ApiClient:
         payload = {
             "hora_fim": hora_fim.strftime("%H:%M:%S"),
             "tempo_ocioso": tempo_ocioso_str,
+            "ativa": False
         }
 
         try:
