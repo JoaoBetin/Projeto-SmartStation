@@ -52,8 +52,8 @@ public class SessaoService {
         SessaoModel sessaoModel = sessaoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sessao nao encontrada"));
 
-        if(sessaoDTO.getFuncionarioModel() != null){
-            sessaoModel.setFuncionarioModel(sessaoDTO.getFuncionarioModel());
+        if(sessaoDTO.getFuncionarioDTO() != null){
+            sessaoModel.setFuncionarioModel(sessaoDTO.getFuncionarioDTO());
         }
 
         if(sessaoDTO.getData() != null){

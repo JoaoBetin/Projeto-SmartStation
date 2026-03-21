@@ -13,7 +13,7 @@ public class SessaoMapper {
         SessaoDTO dto = new SessaoDTO();
 
         dto.setId(model.getId());
-        dto.setFuncionarioModel(model.getFuncionarioModel());
+        dto.setFuncionarioDTO(model.getFuncionarioModel());
         dto.setData(model.getData());
         dto.setHora_inicio(model.getHora_inicio());
         dto.setHora_fim(model.getHora_fim());
@@ -32,7 +32,7 @@ public class SessaoMapper {
         SessaoModel model = new SessaoModel();
 
         model.setId(dto.getId());
-        model.setFuncionarioModel(dto.getFuncionarioModel());
+        model.setFuncionarioModel(dto.getFuncionarioDTO());
         model.setData(dto.getData());
         model.setHora_inicio(dto.getHora_inicio());
         model.setHora_fim(dto.getHora_fim());
