@@ -24,7 +24,7 @@ function formatDate(iso) {
 const MOCK_FUNCIONARIOS = [
   {
     id: 1,
-    nome: "Henrique Oliveira",
+    nome: "Henrique Falasco",
     matricula: 842798431,
     cargo: "FUNCIONARIO",
     ativo: true,
@@ -34,7 +34,7 @@ const MOCK_FUNCIONARIOS = [
   },
   {
     id: 2,
-    nome: "Betin Carvalho",
+    nome: "Joao Filipe Betin",
     matricula: 759204816,
     cargo: "ADMIN",
     ativo: true,
@@ -44,7 +44,7 @@ const MOCK_FUNCIONARIOS = [
   },
   {
     id: 3,
-    nome: "Rafael Mendes",
+    nome: "Rafael Guerino",
     matricula: 631047529,
     cargo: "FUNCIONARIO",
     ativo: false,
@@ -617,19 +617,6 @@ export default function SmartStationDashboard() {
                     <div className="kpi-sub">soma das ociosidades</div>
                     <div className="kpi-spark"><Sparkline data={sparkIdle} color="#d97706" /></div>
                     <div className="kpi-trend tw">⚠ monitorar</div>
-                  </div>
-                </div>
-
-                {/* Gráfico de atividade */}
-                <div className="sec">
-                  <div className="sec-head">
-                    <div>
-                      <div className="sec-title">Linha do Tempo do Turno</div>
-                      <div className="sec-sub">Visualização de atividade e ociosidade</div>
-                    </div>
-                  </div>
-                  <div className="sec-body">
-                    <ActivityChart sessions={sessions} />
                   </div>
                 </div>
               </>
