@@ -1,5 +1,6 @@
 package SmartStation.dashboard_api.Sessao;
 
+import SmartStation.dashboard_api.Funcionario.FuncionarioDTO;
 import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -23,11 +24,6 @@ public class SessaoModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "funcionario_id")
-    @JsonIgnore
-    private FuncionarioModel funcionarioModel;
-
     private Boolean ativa;
 
     private LocalDate data;
@@ -39,5 +35,10 @@ public class SessaoModel {
     private LocalTime tempo_ocioso;
 
     private Integer total_caixas;
+
+    @ManyToOne
+    @JoinColumn(name = "funcionario_id")
+    @JsonIgnore
+    private FuncionarioDTO funcionarioDTO;
 
 }

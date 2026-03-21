@@ -16,6 +16,7 @@ public class FuncionarioMapper {
         dto.setMatricula(funcionario.getMatricula());
         dto.setAtivo(funcionario.getAtivo());
         dto.setSessaoModels(funcionario.getSessaoModels());
+        dto.setCargo(funcionario.getCargo());
 
         return dto;
     }
@@ -32,6 +33,7 @@ public class FuncionarioMapper {
         funcionario.setMatricula(dto.getMatricula());
         funcionario.setAtivo(dto.getAtivo());
         funcionario.setSessaoModels(dto.getSessaoModels());
+        funcionario.setCargo(dto.getCargo());
 
         return funcionario;
     }
