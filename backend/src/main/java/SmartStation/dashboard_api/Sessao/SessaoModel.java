@@ -39,6 +39,6 @@ public class SessaoModel {
     @ManyToOne
     @JoinColumn(name = "funcionario_id")
     @JsonIgnore
-    private FuncionarioDTO funcionarioDTO;
+    private FuncionarioModel funcionarioModel;
 
 }

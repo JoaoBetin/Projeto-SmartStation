@@ -1,5 +1,6 @@
 package SmartStation.dashboard_api.Sessao;
 
+import SmartStation.dashboard_api.Funcionario.FuncionarioDTO;
 import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +16,7 @@ public class SessaoDTO {
 
     private Long id;
 
-    private FuncionarioModel funcionarioModel;
+    private FuncionarioModel funcionarioDTO;
 
     private Boolean ativa;
 
