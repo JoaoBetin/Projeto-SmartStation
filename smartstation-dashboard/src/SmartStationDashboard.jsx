@@ -20,12 +20,47 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-// ─── MOCK DATA ───────────────────────────────────────────────────────────────
-function generateMockSessions() {
+// ─── MOCK FUNCIONÁRIOS ───────────────────────────────────────────────────────
+const MOCK_FUNCIONARIOS = [
+  {
+    id: 1,
+    nome: "Henrique Oliveira",
+    matricula: 842798431,
+    cargo: "FUNCIONARIO",
+    ativo: true,
+    avatar: "HO",
+    cor: "#16a34a",
+    corBg: "#dcfce7",
+  },
+  {
+    id: 2,
+    nome: "Betin Carvalho",
+    matricula: 759204816,
+    cargo: "ADMIN",
+    ativo: true,
+    avatar: "BC",
+    cor: "#2563eb",
+    corBg: "#dbeafe",
+  },
+  {
+    id: 3,
+    nome: "Rafael Mendes",
+    matricula: 631047529,
+    cargo: "FUNCIONARIO",
+    ativo: false,
+    avatar: "RM",
+    cor: "#94a3b8",
+    corBg: "#f1f5f9",
+  },
+];
+
+// ─── MOCK SESSIONS por funcionário ──────────────────────────────────────────
+function generateMockSessions(seed = 0) {
   const now = Date.now();
   const sessions = [];
   let cursor = now - 8 * 3600 * 1000;
-  for (let i = 0; i < 22; i++) {
+  const count = 15 + seed * 4;
+  for (let i = 0; i < count; i++) {
     const entrou = cursor + Math.random() * 30000;
     const dur = 25000 + Math.random() * 110000;
     const saiu = entrou + dur;
@@ -41,7 +76,12 @@ function generateMockSessions() {
   }
   return sessions;
 }
-const MOCK_SESSIONS = generateMockSessions();
+
+const SESSIONS_BY_FUNC = {
+  1: generateMockSessions(0),
+  2: generateMockSessions(1),
+  3: generateMockSessions(2),
+};
 
 // ─── SPARKLINE ───────────────────────────────────────────────────────────────
 function Sparkline({ data, color, width = 120, height = 36 }) {
@@ -169,6 +209,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .tb-right{display:flex;align-items:center;gap:10px}
 .clock{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);padding:6px 12px;border-radius:6px;color:var(--t2)}
 .demo-tag{font-size:11px;font-weight:600;letter-spacing:1px;background:var(--al);color:var(--amber);border:1px solid #fde68a;border-radius:5px;padding:4px 10px}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
+.back-btn:hover{background:var(--surface);color:var(--text);border-color:var(--border2)}
 
 .content{padding:22px 26px}
 
@@ -186,8 +228,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .ban-ev-time{font-family:var(--mono);font-size:22px;color:var(--text)}
 .ban-ev-date{font-size:11px;color:var(--t3);margin-top:2px}
 
-.kpi-row{display:grid;grid-template-columns:repeat(3,380px);gap:14px;margin-bottom:18px;justify-content:center}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 24px 22px} //mudar tamannho do padding para ajustar o espaçamento entre os elementos
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 20px}
 .kpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
 .kpi-lbl{font-size:12px;font-weight:500;color:var(--t2)}
 .kpi-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
@@ -206,6 +248,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .sec-body{padding:16px 20px}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px}
 .bg{background:var(--gl);color:var(--green)}.ba{background:var(--al);color:var(--amber)}.bb{background:var(--bl);color:var(--blue)}
+.bgray{background:#f1f5f9;color:#64748b}
 table{width:100%;border-collapse:collapse}
 thead th{text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:10px 14px;border-bottom:1px solid var(--border);background:#f8fafc}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
@@ -220,22 +263,65 @@ tbody td{padding:10px 14px;font-size:12px}
 .cfg-input{padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-family:var(--mono);font-size:12px;color:var(--text);outline:none;width:100%;max-width:420px}
 .cfg-hint{font-size:11px;color:var(--t3)}
 
-@media(max-width:1100px){.kpi-row{grid-template-columns:1fr 1fr}}
+/* ── FUNCIONÁRIOS ── */
+.func-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-bottom:18px}
+.func-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.func-card:hover{border-color:var(--border2);box-shadow:0 4px 20px rgba(0,0,0,.07);transform:translateY(-2px)}
+.func-card.ativo:hover{border-color:var(--gm)}
+.func-card.inativo{opacity:.72}
+.func-card-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.func-avatar{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+.func-nome{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.func-cargo{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3)}
+.func-sep{height:1px;background:var(--border);margin-bottom:14px}
+.func-info-row{display:flex;align-items:center;justify-content:space-between}
+.func-mat-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
+.func-mat{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
+.func-status-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.func-status-badge.ativo{background:var(--gl);color:var(--green)}
+.func-status-badge.inativo{background:#f1f5f9;color:#64748b}
+.func-status-dot{width:6px;height:6px;border-radius:50%}
+.func-status-badge.ativo .func-status-dot{background:var(--green);animation:blink 1.5s infinite}
+.func-status-badge.inativo .func-status-dot{background:#94a3b8}
+.func-card-arrow{position:absolute;top:50%;right:16px;transform:translateY(-50%);font-size:16px;color:var(--t3);opacity:0;transition:opacity .2s,right .2s}
+.func-card:hover .func-card-arrow{opacity:1;right:14px}
+.func-stats-row{display:flex;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.func-stat{flex:1;text-align:center}
+.func-stat-val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text)}
+.func-stat-lbl{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-top:1px}
+
+/* Funcionário ativo header no dashboard */
+.func-header-pill{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:18px}
+.func-header-avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.func-header-nome{font-size:13px;font-weight:700}
+.func-header-mat{font-size:11px;color:var(--t3);font-family:var(--mono)}
+
+/* Stats summary no topo da lista de funcionários */
+.func-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.func-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px}
+.func-summary-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.func-summary-val{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--text);line-height:1}
+.func-summary-lbl{font-size:11px;color:var(--t3);margin-top:2px}
+
+@media(max-width:900px){.kpi-row{grid-template-columns:1fr 1fr}.func-grid{grid-template-columns:1fr}.func-summary{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.kpi-row{grid-template-columns:1fr 1fr}}
 `;
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function SmartStationDashboard() {
-  const [page, setPage] = useState("dashboard");
-  const [sessions] = useState(MOCK_SESSIONS);
-  const [status] = useState({
-    isActive: true,
-    entryTime: new Date(Date.now() - 47000).toISOString(),
-    exitTime: null,
-    lastIdleStart: null,
-  });
+  const [page, setPage] = useState("funcionarios");
+  const [selectedFunc, setSelectedFunc] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [now, setNow] = useState(new Date());
+
+  // Sessões e status do funcionário selecionado
+  const sessions = selectedFunc ? SESSIONS_BY_FUNC[selectedFunc.id] || [] : [];
+  const status = {
+    isActive: selectedFunc ? selectedFunc.ativo : false,
+    entryTime: sessions.length > 0 ? sessions[sessions.length - 1].entryTime : null,
+    exitTime: null,
+    lastIdleStart: null,
+  };
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -243,26 +329,48 @@ export default function SmartStationDashboard() {
   }, []);
 
   useEffect(() => {
-    const ref = status.isActive ? status.entryTime : status.lastIdleStart;
-    const upd = () => setElapsed(Date.now() - new Date(ref || Date.now()).getTime());
+    if (!status.entryTime) return;
+    const ref = status.entryTime;
+    const upd = () => setElapsed(Date.now() - new Date(ref).getTime());
     upd();
     const t = setInterval(upd, 1000);
     return () => clearInterval(t);
-  }, [status]);
+  }, [status.entryTime]);
 
   const totalIdle = sessions.reduce((a, s) => a + (s.idleBefore || 0), 0);
   const totalProc = sessions.reduce((a, s) => a + (s.processingDuration || 0), 0);
   const avgProc = sessions.length ? totalProc / sessions.length : 0;
-  const efficiency = totalProc + totalIdle > 0 ? Math.round((totalProc / (totalProc + totalIdle)) * 100) : 0;
   const sparkProc = sessions.slice(-10).map(s => s.processingDuration / 1000);
   const sparkIdle = sessions.slice(-10).map(s => (s.idleBefore || 0) / 1000);
   const sparkCount = sessions.slice(-10).map((_, i) => i + 1);
 
+  const handleSelectFunc = (func) => {
+    setSelectedFunc(func);
+    setPage("dashboard");
+  };
+
+  const handleBack = () => {
+    setPage("funcionarios");
+    setSelectedFunc(null);
+  };
+
   const navItems = [
+    { id: "funcionarios", icon: "👥", label: "Funcionários" },
     { id: "dashboard", icon: "▦", label: "Visão Geral" },
-    { id: "history",   icon: "≡", label: "Histórico" },
-    { id: "config",    icon: "⚙", label: "Configurações" },
+    { id: "history", icon: "≡", label: "Histórico" },
+    { id: "config", icon: "⚙", label: "Configurações" },
   ];
+
+  const ativosCount = MOCK_FUNCIONARIOS.filter(f => f.ativo).length;
+  const inativosCount = MOCK_FUNCIONARIOS.filter(f => !f.ativo).length;
+
+  const getPageTitle = () => {
+    if (page === "funcionarios") return "Funcionários";
+    if (page === "dashboard") return selectedFunc ? `Visão Geral — ${selectedFunc.nome.split(" ")[0]}` : "Visão Geral";
+    if (page === "history") return selectedFunc ? `Histórico — ${selectedFunc.nome.split(" ")[0]}` : "Histórico";
+    if (page === "config") return "Configurações";
+    return "";
+  };
 
   return (
     <>
@@ -281,17 +389,28 @@ export default function SmartStationDashboard() {
           <div className="sb-sec">
             <div className="sb-sec-label">Menu</div>
             {navItems.map(n => (
-              <button key={n.id} className={`nav-btn ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
+              <button
+                key={n.id}
+                className={`nav-btn ${page === n.id ? "active" : ""}`}
+                onClick={() => {
+                  if (n.id === "funcionarios") {
+                    setPage("funcionarios");
+                    setSelectedFunc(null);
+                  } else {
+                    setPage(n.id);
+                  }
+                }}
+              >
                 <span className="nav-icon">{n.icon}</span>{n.label}
               </button>
             ))}
           </div>
           <div className="sb-bot">
             <div className="st-pill">
-              <div className={`st-dot ${status.isActive ? "on" : "off"}`} />
+              <div className={`st-dot ${selectedFunc?.ativo ? "on" : "off"}`} />
               <div>
-                <div className="st-txt" style={{ color: status.isActive ? "var(--green)" : "var(--amber)" }}>
-                  {status.isActive ? "Bancada Ativa" : "Ociosa"}
+                <div className="st-txt" style={{ color: selectedFunc?.ativo ? "var(--green)" : "var(--amber)" }}>
+                  {selectedFunc ? (selectedFunc.ativo ? "Bancada Ativa" : "Ociosa") : "Nenhum selecionado"}
                 </div>
                 <div className="st-sub">{now.toLocaleTimeString("pt-BR", { hour12: false })}</div>
               </div>
@@ -303,14 +422,15 @@ export default function SmartStationDashboard() {
         <div className="main">
           <div className="topbar">
             <div>
-              <div className="tb-title">
-                {page === "dashboard" && "Visão Geral"}
-                {page === "history"   && "Histórico de Sessões"}
-                {page === "config"    && "Configurações"}
-              </div>
+              <div className="tb-title">{getPageTitle()}</div>
               <div className="tb-sub">{formatDate(new Date().toISOString())} · Turno atual</div>
             </div>
             <div className="tb-right">
+              {(page === "dashboard" || page === "history") && selectedFunc && (
+                <button className="back-btn" onClick={handleBack}>
+                  ← Funcionários
+                </button>
+              )}
               <div className="demo-tag">MODO DEMO</div>
               <div className="clock">{now.toLocaleTimeString("pt-BR", { hour12: false })}</div>
             </div>
@@ -318,101 +438,250 @@ export default function SmartStationDashboard() {
 
           <div className="content">
 
+            {/* ══ FUNCIONÁRIOS ══ */}
+            {page === "funcionarios" && (
+              <>
+                {/* Summary bar */}
+                <div className="func-summary">
+                  <div className="func-summary-card">
+                    <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>👥</div>
+                    <div>
+                      <div className="func-summary-val">{MOCK_FUNCIONARIOS.length}</div>
+                      <div className="func-summary-lbl">Total de funcionários</div>
+                    </div>
+                  </div>
+                  <div className="func-summary-card">
+                    <div className="func-summary-ico" style={{ background: "var(--gl)" }}>✅</div>
+                    <div>
+                      <div className="func-summary-val" style={{ color: "var(--green)" }}>{ativosCount}</div>
+                      <div className="func-summary-lbl">Ativos agora</div>
+                    </div>
+                  </div>
+                  <div className="func-summary-card">
+                    <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>⏸</div>
+                    <div>
+                      <div className="func-summary-val" style={{ color: "#64748b" }}>{inativosCount}</div>
+                      <div className="func-summary-lbl">Inativos</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="func-grid">
+                  {MOCK_FUNCIONARIOS.map(func => {
+                    const funcSessions = SESSIONS_BY_FUNC[func.id] || [];
+                    const funcTotalProc = funcSessions.reduce((a, s) => a + (s.processingDuration || 0), 0);
+                    const funcAvgProc = funcSessions.length ? funcTotalProc / funcSessions.length : 0;
+                    return (
+                      <div
+                        key={func.id}
+                        className={`func-card ${func.ativo ? "ativo" : "inativo"}`}
+                        onClick={() => handleSelectFunc(func)}
+                      >
+                        <div className="func-card-top">
+                          <div
+                            className="func-avatar"
+                            style={{ background: func.corBg, color: func.cor }}
+                          >
+                            {func.avatar}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div className="func-nome">{func.nome}</div>
+                            <div className="func-cargo">{func.cargo}</div>
+                          </div>
+                          <div
+                            className={`func-status-badge ${func.ativo ? "ativo" : "inativo"}`}
+                          >
+                            <div className="func-status-dot" />
+                            {func.ativo ? "Ativo" : "Inativo"}
+                          </div>
+                        </div>
+
+                        <div className="func-sep" />
+
+                        <div className="func-info-row">
+                          <div>
+                            <div className="func-mat-label">Matrícula</div>
+                            <div className="func-mat">{func.matricula}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div className="func-mat-label">Caixas hoje</div>
+                            <div className="func-mat" style={{ color: func.cor }}>{funcSessions.length}</div>
+                          </div>
+                        </div>
+
+                        <div className="func-stats-row">
+                          <div className="func-stat">
+                            <div className="func-stat-val">{funcSessions.length}</div>
+                            <div className="func-stat-lbl">Sessões</div>
+                          </div>
+                          <div className="func-stat">
+                            <div className="func-stat-val" style={{ fontSize: 12 }}>
+                              {funcSessions.length ? formatDuration(funcAvgProc) : "--"}
+                            </div>
+                            <div className="func-stat-lbl">Média/Caixa</div>
+                          </div>
+                          <div className="func-stat">
+                            <div className="func-stat-val">{funcSessions.length > 0 ? "✓" : "—"}</div>
+                            <div className="func-stat-lbl">Sessão</div>
+                          </div>
+                        </div>
+
+                        <div className="func-card-arrow">›</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
             {/* ══ VISÃO GERAL ══ */}
-            {page === "dashboard" && <>
-              {/* Banner de status */}
-              <div className={`banner ${status.isActive ? "on" : "off"}`}>
-                <div className="ban-icon">{status.isActive ? "📦" : "⏳"}</div>
-                <div>
-                  <div className="ban-lbl">Status da Bancada</div>
-                  <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
-                    {status.isActive ? "Caixa em Processamento" : "Estação Ociosa"}
+            {page === "dashboard" && (
+              <>
+                {/* Pill de identificação do funcionário */}
+                {selectedFunc && (
+                  <div className="func-header-pill">
+                    <div
+                      className="func-header-avatar"
+                      style={{ background: selectedFunc.corBg, color: selectedFunc.cor }}
+                    >
+                      {selectedFunc.avatar}
+                    </div>
+                    <div>
+                      <div className="func-header-nome">{selectedFunc.nome}</div>
+                      <div className="func-header-mat">Mat. {selectedFunc.matricula} · {selectedFunc.cargo}</div>
+                    </div>
+                    <div style={{ marginLeft: "auto" }}>
+                      <span className={`badge ${selectedFunc.ativo ? "bg" : "bgray"}`}>
+                        {selectedFunc.ativo ? "● Ativo" : "○ Inativo"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="ban-timer">{formatDuration(elapsed)}</div>
-                </div>
-                <div className="ban-div" />
-                <div className="ban-ev">
-                  <div className="ban-ev-lbl">📥 Caixa Entrou</div>
-                  <div className="ban-ev-time">{formatTime(status.entryTime)}</div>
-                  <div className="ban-ev-date">{formatDate(status.entryTime)}</div>
-                </div>
-                <div className="ban-div" />
-                <div className="ban-ev">
-                  <div className="ban-ev-lbl">📤 Caixa Saiu</div>
-                  <div className="ban-ev-time">
-                    {status.isActive
-                      ? <span style={{ color: "var(--t3)", fontSize: 15 }}>Aguardando…</span>
-                      : formatTime(status.exitTime)
-                    }
-                  </div>
-                  {!status.isActive && <div className="ban-ev-date">{formatDate(status.exitTime)}</div>}
-                </div>
-              </div>
+                )}
 
-              {/* KPIs */}
-              <div className="kpi-row">
-                <div className="kpi">
-                  <div className="kpi-top">
-                    <div className="kpi-lbl">Caixas Processadas</div>
-                    <div className="kpi-ico" style={{ background: "var(--gl)" }}>📦</div>
+                {/* Banner de status */}
+                <div className={`banner ${status.isActive ? "on" : "off"}`}>
+                  <div className="ban-icon">{status.isActive ? "📦" : "⏳"}</div>
+                  <div>
+                    <div className="ban-lbl">Status da Bancada</div>
+                    <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
+                      {status.isActive ? "Caixa em Processamento" : "Estação Ociosa"}
+                    </div>
+                    <div className="ban-timer">{formatDuration(elapsed)}</div>
                   </div>
-                  <div className="kpi-val">{sessions.length}</div>
-                  <div className="kpi-sub">hoje no turno</div>
-                  <div className="kpi-spark"><Sparkline data={sparkCount} color="#16a34a" /></div>
-                  <div className="kpi-trend tu">↑ turno ativo</div>
-                </div>
-                <div className="kpi">
-                  <div className="kpi-top">
-                    <div className="kpi-lbl">Tempo Médio / Caixa</div>
-                    <div className="kpi-ico" style={{ background: "var(--bl)" }}>⏱</div>
+                  <div className="ban-div" />
+                  <div className="ban-ev">
+                    <div className="ban-ev-lbl">📥 Caixa Entrou</div>
+                    <div className="ban-ev-time">{formatTime(status.entryTime)}</div>
+                    <div className="ban-ev-date">{formatDate(status.entryTime)}</div>
                   </div>
-                  <div className="kpi-val" style={{ fontSize: 48, paddingTop: 4 }}>{formatDuration(avgProc)}</div>
-                  <div className="kpi-sub">média de processamento</div>
-                  <div className="kpi-spark"><Sparkline data={sparkProc} color="#2563eb" /></div>
-                </div>
-                <div className="kpi">
-                  <div className="kpi-top">
-                    <div className="kpi-lbl">Tempo Total Ocioso</div>
-                    <div className="kpi-ico" style={{ background: "var(--al)" }}>⏸</div>
+                  <div className="ban-div" />
+                  <div className="ban-ev">
+                    <div className="ban-ev-lbl">📤 Caixa Saiu</div>
+                    <div className="ban-ev-time">
+                      {status.isActive
+                        ? <span style={{ color: "var(--t3)", fontSize: 15 }}>Aguardando…</span>
+                        : formatTime(status.exitTime)
+                      }
+                    </div>
+                    {!status.isActive && <div className="ban-ev-date">{formatDate(status.exitTime)}</div>}
                   </div>
-                  <div className="kpi-val" style={{ fontSize: 48, paddingTop: 4 }}>{formatDuration(totalIdle)}</div>
-                  <div className="kpi-sub">soma das ociosidades</div>
-                  <div className="kpi-spark"><Sparkline data={sparkIdle} color="#d97706" /></div>
-                  <div className="kpi-trend tw">⚠ monitorar</div>
                 </div>
-              </div>
-            </>}
 
+                {/* KPIs */}
+                <div className="kpi-row">
+                  <div className="kpi">
+                    <div className="kpi-top">
+                      <div className="kpi-lbl">Caixas Processadas</div>
+                      <div className="kpi-ico" style={{ background: "var(--gl)" }}>📦</div>
+                    </div>
+                    <div className="kpi-val">{sessions.length}</div>
+                    <div className="kpi-sub">hoje no turno</div>
+                    <div className="kpi-spark"><Sparkline data={sparkCount} color="#16a34a" /></div>
+                    <div className="kpi-trend tu">↑ turno ativo</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-top">
+                      <div className="kpi-lbl">Tempo Médio / Caixa</div>
+                      <div className="kpi-ico" style={{ background: "var(--bl)" }}>⏱</div>
+                    </div>
+                    <div className="kpi-val" style={{ fontSize: 32, paddingTop: 4 }}>{formatDuration(avgProc)}</div>
+                    <div className="kpi-sub">média de processamento</div>
+                    <div className="kpi-spark"><Sparkline data={sparkProc} color="#2563eb" /></div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-top">
+                      <div className="kpi-lbl">Tempo Total Ocioso</div>
+                      <div className="kpi-ico" style={{ background: "var(--al)" }}>⏸</div>
+                    </div>
+                    <div className="kpi-val" style={{ fontSize: 32, paddingTop: 4 }}>{formatDuration(totalIdle)}</div>
+                    <div className="kpi-sub">soma das ociosidades</div>
+                    <div className="kpi-spark"><Sparkline data={sparkIdle} color="#d97706" /></div>
+                    <div className="kpi-trend tw">⚠ monitorar</div>
+                  </div>
+                </div>
+
+                {/* Gráfico de atividade */}
+                <div className="sec">
+                  <div className="sec-head">
+                    <div>
+                      <div className="sec-title">Linha do Tempo do Turno</div>
+                      <div className="sec-sub">Visualização de atividade e ociosidade</div>
+                    </div>
+                  </div>
+                  <div className="sec-body">
+                    <ActivityChart sessions={sessions} />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* ══ HISTÓRICO ══ */}
             {page === "history" && (
-              <div className="sec">
-                <div className="sec-head">
-                  <div>
-                    <div className="sec-title">Histórico Completo</div>
-                    <div className="sec-sub">Todos os registros do turno</div>
+              <>
+                {selectedFunc && (
+                  <div className="func-header-pill" style={{ marginBottom: 16 }}>
+                    <div
+                      className="func-header-avatar"
+                      style={{ background: selectedFunc.corBg, color: selectedFunc.cor }}
+                    >
+                      {selectedFunc.avatar}
+                    </div>
+                    <div>
+                      <div className="func-header-nome">{selectedFunc.nome}</div>
+                      <div className="func-header-mat">Mat. {selectedFunc.matricula}</div>
+                    </div>
                   </div>
-                  <span className="badge bb">{sessions.length} registros</span>
+                )}
+                <div className="sec">
+                  <div className="sec-head">
+                    <div>
+                      <div className="sec-title">Histórico Completo</div>
+                      <div className="sec-sub">
+                        {selectedFunc ? `Registros de ${selectedFunc.nome.split(" ")[0]}` : "Todos os registros do turno"}
+                      </div>
+                    </div>
+                    <span className="badge bb">{sessions.length} registros</span>
+                  </div>
+                  <table>
+                    <thead>
+                      <tr><th>#</th><th>Data</th><th>Caixa Entrou</th><th>Caixa Saiu</th><th>Duração Processo</th><th>Ociosidade Anterior</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {[...sessions].reverse().map(s => (
+                        <tr key={s.id}>
+                          <td className="tm dim">#{String(s.id).padStart(3, "0")}</td>
+                          <td className="dim" style={{ fontSize: 14 }}>{formatDate(s.entryTime)}</td>
+                          <td className="tm tg">{formatTime(s.entryTime)}</td>
+                          <td className="tm tb">{formatTime(s.exitTime)}</td>
+                          <td className="tm">{formatDuration(s.processingDuration)}</td>
+                          <td>{(s.idleBefore || 0) > 0 ? <span className="badge ba">{formatDuration(s.idleBefore)}</span> : <span className="dim">—</span>}</td>
+                          <td><span className="badge bg">Concluído</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <table>
-                  <thead>
-                    <tr><th>#</th><th>Data</th><th>Caixa Entrou</th><th>Caixa Saiu</th><th>Duração Processo</th><th>Ociosidade Anterior</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    {[...sessions].reverse().map(s => (
-                      <tr key={s.id}>
-                        <td className="tm dim">#{String(s.id).padStart(3, "0")}</td>
-                        <td className="dim" style={{ fontSize: 14 }}>{formatDate(s.entryTime)}</td>
-                        <td className="tm tg">{formatTime(s.entryTime)}</td>
-                        <td className="tm tb">{formatTime(s.exitTime)}</td>
-                        <td className="tm">{formatDuration(s.processingDuration)}</td>
-                        <td>{(s.idleBefore || 0) > 0 ? <span className="badge ba">{formatDuration(s.idleBefore)}</span> : <span className="dim">—</span>}</td>
-                        <td><span className="badge bg">Concluído</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              </>
             )}
 
             {/* ══ CONFIG ══ */}
@@ -425,7 +694,7 @@ export default function SmartStationDashboard() {
                   {[
                     { label: "URL do Backend", value: API_BASE, hint: "Endereço da API Java" },
                     { label: "Intervalo de Atualização", value: "3000ms", hint: "Frequência do polling" },
-                    { label: "Câmera", value: "Camera 0 (padrão)"}
+                    { label: "Câmera", value: "Camera 0 (padrão)" },
                   ].map(item => (
                     <div key={item.label} className="cfg-field">
                       <label className="cfg-label">{item.label}</label>
