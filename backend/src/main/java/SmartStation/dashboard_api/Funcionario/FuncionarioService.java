@@ -81,10 +81,6 @@ public class FuncionarioService {
             funcionarioModel.setCargo(funcionarioDTO.getCargo());
         }
 
-        if(funcionarioDTO.getSessaoModels() != null){
-            funcionarioModel.setSessaoModels(funcionarioDTO.getSessaoModels());
-        }
-
         FuncionarioModel funcionarioSalvo = funcionarioRepository.save(funcionarioModel);
         return funcionarioMapper.toDTO(funcionarioSalvo);
     }

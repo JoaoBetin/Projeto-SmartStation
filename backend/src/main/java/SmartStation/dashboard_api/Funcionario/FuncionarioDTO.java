@@ -1,5 +1,6 @@
 package SmartStation.dashboard_api.Funcionario;
 
+import SmartStation.dashboard_api.Sessao.SessaoDTO;
 import SmartStation.dashboard_api.Sessao.SessaoModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,5 +23,5 @@ public class FuncionarioDTO {
 
     private Boolean ativo;
 
-    private List<SessaoModel> sessaoModels;
+    private List<SessaoDTO> sessaoModels;
 }
