@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { getFuncionarios, getSessoes } from "./api";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "http://localhost:8080";
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 function formatDuration(ms) {
@@ -20,68 +21,40 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-// ─── MOCK FUNCIONÁRIOS ───────────────────────────────────────────────────────
-const MOCK_FUNCIONARIOS = [
-  {
-    id: 1,
-    nome: "Henrique Falasco",
-    matricula: 842798431,
-    cargo: "FUNCIONARIO",
-    ativo: true,
-    avatar: "HO",
-    cor: "#16a34a",
-    corBg: "#dcfce7",
-  },
-  {
-    id: 2,
-    nome: "Joao Filipe Betin",
-    matricula: 759204816,
-    cargo: "ADMIN",
-    ativo: true,
-    avatar: "BC",
-    cor: "#2563eb",
-    corBg: "#dbeafe",
-  },
-  {
-    id: 3,
-    nome: "Rafael Guerino",
-    matricula: 631047529,
-    cargo: "FUNCIONARIO",
-    ativo: false,
-    avatar: "RM",
-    cor: "#94a3b8",
-    corBg: "#f1f5f9",
-  },
-];
-
-// ─── MOCK SESSIONS por funcionário ──────────────────────────────────────────
-function generateMockSessions(seed = 0) {
-  const now = Date.now();
-  const sessions = [];
-  let cursor = now - 8 * 3600 * 1000;
-  const count = 15 + seed * 4;
-  for (let i = 0; i < count; i++) {
-    const entrou = cursor + Math.random() * 30000;
-    const dur = 25000 + Math.random() * 110000;
-    const saiu = entrou + dur;
-    const idle = i === 0 ? 0 : 8000 + Math.random() * 80000;
-    sessions.push({
-      id: i + 1,
-      entryTime: new Date(entrou).toISOString(),
-      exitTime: new Date(saiu).toISOString(),
-      processingDuration: Math.round(dur),
-      idleBefore: Math.round(idle),
-    });
-    cursor = saiu + idle;
+function adaptarSessao(s) {
+  let idleBefore = 0;
+  if (s.tempoOcioso) {
+    const [h, m, sec] = s.tempoOcioso.split(":").map(Number);
+    idleBefore = (h * 3600 + m * 60 + sec) * 1000;
   }
-  return sessions;
+  return {
+    id: s.id,
+    funcionarioID: s.funcionarioID,
+    entryTime: s.horaInicio ? `${s.data}T${s.horaInicio}` : null,
+    exitTime: s.horaFim ? `${s.data}T${s.horaFim}` : null,
+    processingDuration: 0,
+    idleBefore,
+    ativa: s.ativa,
+    totalCaixas: s.totalCaixas ?? 0,
+  };
 }
 
-const SESSIONS_BY_FUNC = {
-  1: generateMockSessions(0),
-  2: generateMockSessions(1),
-  3: generateMockSessions(2),
-};
+// ─── AVATAR COLORS ──────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  { cor: "#16a34a", corBg: "#dcfce7" },
+  { cor: "#2563eb", corBg: "#dbeafe" },
+  { cor: "#9333ea", corBg: "#f3e8ff" },
+  { cor: "#ea580c", corBg: "#ffedd5" },
+  { cor: "#0891b2", corBg: "#cffafe" },
+];
+function getAvatarColor(id) {
+  return AVATAR_COLORS[(id - 1) % AVATAR_COLORS.length];
+}
+function getAvatar(nome) {
+  if (!nome) return "??";
+  const parts = nome.trim().split(" ");
+  return (parts[0][0] + (parts[1] ? parts[1][0] : parts[0][1] ?? "")).toUpperCase();
+}
 
 // ─── SPARKLINE ───────────────────────────────────────────────────────────────
 function Sparkline({ data, color, width = 120, height = 36 }) {
@@ -208,11 +181,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .tb-sub{font-size:12px;color:var(--t3);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:10px}
 .clock{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--border);padding:6px 12px;border-radius:6px;color:var(--t2)}
-.demo-tag{font-size:11px;font-weight:600;letter-spacing:1px;background:var(--al);color:var(--amber);border:1px solid #fde68a;border-radius:5px;padding:4px 10px}
 .back-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--t2);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
 .back-btn:hover{background:var(--surface);color:var(--text);border-color:var(--border2)}
 
 .content{padding:22px 26px}
+
+.erro-box{padding:14px 18px;background:var(--rl);border:1px solid #fca5a5;border-radius:10px;color:var(--red);font-size:13px;font-weight:500;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.loading-box{padding:40px;text-align:center;color:var(--t3);font-size:13px;font-family:var(--mono)}
 
 .banner{border-radius:12px;padding:20px 22px;display:flex;align-items:center;gap:18px;margin-bottom:18px;border:1px solid;transition:all .4s}
 .banner.on{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#86efac}
@@ -290,13 +265,11 @@ tbody td{padding:10px 14px;font-size:12px}
 .func-stat-val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text)}
 .func-stat-lbl{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-top:1px}
 
-/* Funcionário ativo header no dashboard */
 .func-header-pill{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:18px}
 .func-header-avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
 .func-header-nome{font-size:13px;font-weight:700}
 .func-header-mat{font-size:11px;color:var(--t3);font-family:var(--mono)}
 
-/* Stats summary no topo da lista de funcionários */
 .func-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .func-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:12px}
 .func-summary-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -314,13 +287,51 @@ export default function SmartStationDashboard() {
   const [elapsed, setElapsed] = useState(0);
   const [now, setNow] = useState(new Date());
 
-  // Sessões e status do funcionário selecionado
-  const sessions = selectedFunc ? SESSIONS_BY_FUNC[selectedFunc.id] || [] : [];
+  // ── Estado real da API ──
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [sessoesPorFunc, setSessoesPorFunc] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  // ── Carregamento com polling ──
+  useEffect(() => {
+    async function carregar() {
+      try {
+        setErro(null);
+        const [funcs, sessoes] = await Promise.all([
+          getFuncionarios(),
+          getSessoes(),
+        ]);
+
+        setFuncionarios(funcs);
+
+        const agrupadas = {};
+        sessoes.map(adaptarSessao).forEach((s) => {
+          const fid = s.funcionarioID;
+          if (fid == null) return;
+          if (!agrupadas[fid]) agrupadas[fid] = [];
+          agrupadas[fid].push(s);
+        });
+        setSessoesPorFunc(agrupadas);
+      } catch (e) {
+        setErro(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregar();
+    const intervalo = setInterval(carregar, 3000);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  // ── Sessões e status do funcionário selecionado ──
+  const sessions = selectedFunc ? sessoesPorFunc[selectedFunc.id] || [] : [];
+  const sessaoAtiva = sessions.find((s) => s.ativa) || sessions[sessions.length - 1] || null;
   const status = {
-    isActive: selectedFunc ? selectedFunc.ativo : false,
-    entryTime: sessions.length > 0 ? sessions[sessions.length - 1].entryTime : null,
-    exitTime: null,
-    lastIdleStart: null,
+    isActive: sessaoAtiva?.ativa ?? false,
+    entryTime: sessaoAtiva?.entryTime ?? null,
+    exitTime: sessaoAtiva?.exitTime ?? null,
   };
 
   useEffect(() => {
@@ -361,8 +372,8 @@ export default function SmartStationDashboard() {
     { id: "config", icon: "⚙", label: "Configurações" },
   ];
 
-  const ativosCount = MOCK_FUNCIONARIOS.filter(f => f.ativo).length;
-  const inativosCount = MOCK_FUNCIONARIOS.filter(f => !f.ativo).length;
+  const ativosCount = funcionarios.filter(f => f.ativo).length;
+  const inativosCount = funcionarios.filter(f => !f.ativo).length;
 
   const getPageTitle = () => {
     if (page === "funcionarios") return "Funcionários";
@@ -431,22 +442,32 @@ export default function SmartStationDashboard() {
                   ← Funcionários
                 </button>
               )}
-              <div className="demo-tag">MODO DEMO</div>
               <div className="clock">{now.toLocaleTimeString("pt-BR", { hour12: false })}</div>
             </div>
           </div>
 
           <div className="content">
 
+            {/* Feedback de erro */}
+            {erro && (
+              <div className="erro-box">
+                ⚠ Erro ao conectar com o backend: {erro}
+              </div>
+            )}
+
+            {/* Loading inicial */}
+            {loading && (
+              <div className="loading-box">Carregando dados do backend…</div>
+            )}
+
             {/* ══ FUNCIONÁRIOS ══ */}
-            {page === "funcionarios" && (
+            {!loading && page === "funcionarios" && (
               <>
-                {/* Summary bar */}
                 <div className="func-summary">
                   <div className="func-summary-card">
                     <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>👥</div>
                     <div>
-                      <div className="func-summary-val">{MOCK_FUNCIONARIOS.length}</div>
+                      <div className="func-summary-val">{funcionarios.length}</div>
                       <div className="func-summary-lbl">Total de funcionários</div>
                     </div>
                   </div>
@@ -466,31 +487,30 @@ export default function SmartStationDashboard() {
                   </div>
                 </div>
 
+                {funcionarios.length === 0 && !erro && (
+                  <div className="loading-box">Nenhum funcionário cadastrado no sistema.</div>
+                )}
+
                 <div className="func-grid">
-                  {MOCK_FUNCIONARIOS.map(func => {
-                    const funcSessions = SESSIONS_BY_FUNC[func.id] || [];
-                    const funcTotalProc = funcSessions.reduce((a, s) => a + (s.processingDuration || 0), 0);
-                    const funcAvgProc = funcSessions.length ? funcTotalProc / funcSessions.length : 0;
+                  {funcionarios.map(func => {
+                    const { cor, corBg } = getAvatarColor(func.id);
+                    const funcSessions = sessoesPorFunc[func.id] || [];
+                    const funcTotalCaixas = funcSessions.reduce((a, s) => a + (s.totalCaixas || 0), 0);
                     return (
                       <div
                         key={func.id}
                         className={`func-card ${func.ativo ? "ativo" : "inativo"}`}
-                        onClick={() => handleSelectFunc(func)}
+                        onClick={() => handleSelectFunc({ ...func, cor, corBg, avatar: getAvatar(func.nome) })}
                       >
                         <div className="func-card-top">
-                          <div
-                            className="func-avatar"
-                            style={{ background: func.corBg, color: func.cor }}
-                          >
-                            {func.avatar}
+                          <div className="func-avatar" style={{ background: corBg, color: cor }}>
+                            {getAvatar(func.nome)}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div className="func-nome">{func.nome}</div>
                             <div className="func-cargo">{func.cargo}</div>
                           </div>
-                          <div
-                            className={`func-status-badge ${func.ativo ? "ativo" : "inativo"}`}
-                          >
+                          <div className={`func-status-badge ${func.ativo ? "ativo" : "inativo"}`}>
                             <div className="func-status-dot" />
                             {func.ativo ? "Ativo" : "Inativo"}
                           </div>
@@ -505,7 +525,7 @@ export default function SmartStationDashboard() {
                           </div>
                           <div style={{ textAlign: "right" }}>
                             <div className="func-mat-label">Caixas hoje</div>
-                            <div className="func-mat" style={{ color: func.cor }}>{funcSessions.length}</div>
+                            <div className="func-mat" style={{ color: cor }}>{funcTotalCaixas}</div>
                           </div>
                         </div>
 
@@ -515,10 +535,8 @@ export default function SmartStationDashboard() {
                             <div className="func-stat-lbl">Sessões</div>
                           </div>
                           <div className="func-stat">
-                            <div className="func-stat-val" style={{ fontSize: 12 }}>
-                              {funcSessions.length ? formatDuration(funcAvgProc) : "--"}
-                            </div>
-                            <div className="func-stat-lbl">Média/Caixa</div>
+                            <div className="func-stat-val">{funcTotalCaixas}</div>
+                            <div className="func-stat-lbl">Caixas</div>
                           </div>
                           <div className="func-stat">
                             <div className="func-stat-val">{funcSessions.length > 0 ? "✓" : "—"}</div>
@@ -537,7 +555,6 @@ export default function SmartStationDashboard() {
             {/* ══ VISÃO GERAL ══ */}
             {page === "dashboard" && (
               <>
-                {/* Pill de identificação do funcionário */}
                 {selectedFunc && (
                   <div className="func-header-pill">
                     <div
@@ -558,7 +575,6 @@ export default function SmartStationDashboard() {
                   </div>
                 )}
 
-                {/* Banner de status */}
                 <div className={`banner ${status.isActive ? "on" : "off"}`}>
                   <div className="ban-icon">{status.isActive ? "📦" : "⏳"}</div>
                   <div>
@@ -587,14 +603,13 @@ export default function SmartStationDashboard() {
                   </div>
                 </div>
 
-                {/* KPIs */}
                 <div className="kpi-row">
                   <div className="kpi">
                     <div className="kpi-top">
                       <div className="kpi-lbl">Caixas Processadas</div>
                       <div className="kpi-ico" style={{ background: "var(--gl)" }}>📦</div>
                     </div>
-                    <div className="kpi-val">{sessions.length}</div>
+                    <div className="kpi-val">{sessions.reduce((a, s) => a + (s.totalCaixas || 0), 0)}</div>
                     <div className="kpi-sub">hoje no turno</div>
                     <div className="kpi-spark"><Sparkline data={sparkCount} color="#16a34a" /></div>
                     <div className="kpi-trend tu">↑ turno ativo</div>
@@ -651,18 +666,21 @@ export default function SmartStationDashboard() {
                   </div>
                   <table>
                     <thead>
-                      <tr><th>#</th><th>Data</th><th>Caixa Entrou</th><th>Caixa Saiu</th><th>Duração Processo</th><th>Ociosidade Anterior</th><th>Status</th></tr>
+                      <tr><th>#</th><th>Data</th><th>Início Sessão</th><th>Fim Sessão</th><th>Caixas</th><th>Ociosidade</th><th>Status</th></tr>
                     </thead>
                     <tbody>
+                      {sessions.length === 0 && (
+                        <tr><td colSpan={7} style={{ textAlign: "center", color: "var(--t3)", padding: 24 }}>Nenhuma sessão registrada</td></tr>
+                      )}
                       {[...sessions].reverse().map(s => (
                         <tr key={s.id}>
                           <td className="tm dim">#{String(s.id).padStart(3, "0")}</td>
-                          <td className="dim" style={{ fontSize: 14 }}>{formatDate(s.entryTime)}</td>
+                          <td className="dim">{formatDate(s.entryTime)}</td>
                           <td className="tm tg">{formatTime(s.entryTime)}</td>
                           <td className="tm tb">{formatTime(s.exitTime)}</td>
-                          <td className="tm">{formatDuration(s.processingDuration)}</td>
+                          <td className="tm">{s.totalCaixas ?? 0}</td>
                           <td>{(s.idleBefore || 0) > 0 ? <span className="badge ba">{formatDuration(s.idleBefore)}</span> : <span className="dim">—</span>}</td>
-                          <td><span className="badge bg">Concluído</span></td>
+                          <td><span className={`badge ${s.ativa ? "ba" : "bg"}`}>{s.ativa ? "Em curso" : "Concluído"}</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -679,9 +697,9 @@ export default function SmartStationDashboard() {
                 </div>
                 <div className="sec-body">
                   {[
-                    { label: "URL do Backend", value: API_BASE, hint: "Endereço da API Java" },
-                    { label: "Intervalo de Atualização", value: "3000ms", hint: "Frequência do polling" },
-                    { label: "Câmera", value: "Camera 0 (padrão)" },
+                    { label: "URL do Backend", value: API_BASE, hint: "Endereço da API Java Spring Boot" },
+                    { label: "Intervalo de Atualização", value: "3000ms", hint: "Frequência do polling automático" },
+                    { label: "Câmera", value: "Camera 0 (padrão)", hint: "Câmera usada para detecção de caixas" },
                   ].map(item => (
                     <div key={item.label} className="cfg-field">
                       <label className="cfg-label">{item.label}</label>
@@ -693,7 +711,7 @@ export default function SmartStationDashboard() {
               </div>
             )}
 
-            <div className="footer">SMARTSTATION v1.0 · MODO DEMONSTRAÇÃO · API: {API_BASE}</div>
+            <div className="footer">SMARTSTATION v1.0 · API: {API_BASE}</div>
           </div>
         </div>
       </div>
