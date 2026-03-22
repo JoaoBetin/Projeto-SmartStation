@@ -1,6 +1,5 @@
 package SmartStation.dashboard_api.Sessao;
 
-import SmartStation.dashboard_api.Funcionario.FuncionarioDTO;
 import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -28,13 +27,13 @@ public class SessaoModel {
 
     private LocalDate data;
 
-    private LocalTime hora_inicio;
+    private LocalTime horaInicio;
 
-    private LocalTime hora_fim;
+    private LocalTime horaFim;
 
-    private LocalTime tempo_ocioso;
+    private LocalTime tempoOcioso;
 
-    private Integer total_caixas;
+    private Integer totalCaixas;
 
     @ManyToOne
     @JoinColumn(name = "funcionario_id")

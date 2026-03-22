@@ -16,17 +16,17 @@ public class SessaoDTO {
 
     private Long id;
 
-    private FuncionarioModel funcionarioDTO;
-
     private Boolean ativa;
 
     private LocalDate data;
 
-    private LocalTime hora_inicio;
+    private LocalTime horaInicio;
 
-    private LocalTime hora_fim;
+    private LocalTime horaFim;
 
-    private LocalTime tempo_ocioso;
+    private LocalTime tempoOcioso;
 
-    private Integer total_caixas;
+    private Integer totalCaixas;
+
+    private Long funcionarioID;
 }

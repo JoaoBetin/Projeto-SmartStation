@@ -1,5 +1,7 @@
 package SmartStation.dashboard_api.Sessao;
 
+import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
+import SmartStation.dashboard_api.Funcionario.FuncionarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,10 +12,12 @@ import java.util.stream.Collectors;
 public class SessaoService {
     SessaoMapper sessaoMapper;
     SessaoRepository sessaoRepository;
+    FuncionarioRepository funcionarioRepository;
 
-    public SessaoService(SessaoMapper sessaoMapper, SessaoRepository sessaoRepository) {
+    public SessaoService(SessaoMapper sessaoMapper, SessaoRepository sessaoRepository, FuncionarioRepository funcionarioRepository) {
         this.sessaoMapper = sessaoMapper;
         this.sessaoRepository = sessaoRepository;
+        this.funcionarioRepository = funcionarioRepository;
     }
 
     // Listar todos
@@ -52,36 +56,20 @@ public class SessaoService {
         SessaoModel sessaoModel = sessaoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sessao nao encontrada"));
 
-        if(sessaoDTO.getFuncionarioDTO() != null){
-            sessaoModel.setFuncionarioModel(sessaoDTO.getFuncionarioDTO());
+        if (sessaoDTO.getFuncionarioID() != null) {
+            FuncionarioModel funcionario = funcionarioRepository.findById(sessaoDTO.getFuncionarioID())
+                    .orElseThrow(() -> new RuntimeException("Funcionario nao encontrado: " + sessaoDTO.getFuncionarioID()));
+            sessaoModel.setFuncionarioModel(funcionario);
         }
 
-        if(sessaoDTO.getData() != null){
-            sessaoModel.setData(sessaoDTO.getData());
-        }
+        if (sessaoDTO.getData() != null) sessaoModel.setData(sessaoDTO.getData());
+        if (sessaoDTO.getAtiva() != null) sessaoModel.setAtiva(sessaoDTO.getAtiva());
+        if (sessaoDTO.getHoraInicio() != null) sessaoModel.setHoraInicio(sessaoDTO.getHoraInicio());
+        if (sessaoDTO.getHoraFim() != null) sessaoModel.setHoraFim(sessaoDTO.getHoraFim());
+        if (sessaoDTO.getTempoOcioso() != null) sessaoModel.setTempoOcioso(sessaoDTO.getTempoOcioso());
+        if (sessaoDTO.getTotalCaixas() != null) sessaoModel.setTotalCaixas(sessaoDTO.getTotalCaixas());
 
-        if(sessaoDTO.getAtiva() != null){
-            sessaoModel.setAtiva(sessaoDTO.getAtiva());
-        }
-
-        if(sessaoDTO.getHora_inicio() != null){
-            sessaoModel.setHora_inicio(sessaoDTO.getHora_inicio());
-        }
-
-        if(sessaoDTO.getHora_fim() != null){
-            sessaoModel.setHora_fim(sessaoDTO.getHora_fim());
-        }
-
-        if(sessaoDTO.getTempo_ocioso() != null){
-            sessaoModel.setTempo_ocioso(sessaoDTO.getTempo_ocioso());
-        }
-
-        if(sessaoDTO.getTotal_caixas() != null){
-            sessaoModel.setTotal_caixas(sessaoDTO.getTotal_caixas());
-        }
-
-        SessaoModel sessaoSalva = sessaoRepository.save(sessaoModel);
-
-        return sessaoMapper.toDTO(sessaoSalva);
+        return sessaoMapper.toDTO(sessaoRepository.save(sessaoModel));
     }
 }
+

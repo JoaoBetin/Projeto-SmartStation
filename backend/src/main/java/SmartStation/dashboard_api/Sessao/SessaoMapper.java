@@ -1,5 +1,6 @@
 package SmartStation.dashboard_api.Sessao;
 
+import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,13 +14,18 @@ public class SessaoMapper {
         SessaoDTO dto = new SessaoDTO();
 
         dto.setId(model.getId());
-        dto.setFuncionarioDTO(model.getFuncionarioModel());
+        dto.setFuncionarioID(model.getFuncionarioModel().getId());
         dto.setData(model.getData());
-        dto.setHora_inicio(model.getHora_inicio());
-        dto.setHora_fim(model.getHora_fim());
-        dto.setTempo_ocioso(model.getTempo_ocioso());
-        dto.setTotal_caixas(model.getTotal_caixas());
+        dto.setHoraInicio(model.getHoraInicio());
+        dto.setHoraFim(model.getHoraFim());
+        dto.setTempoOcioso(model.getTempoOcioso());
+        dto.setTotalCaixas(model.getTotalCaixas());
         dto.setAtiva(model.getAtiva());
+
+
+        if(model.getFuncionarioModel() != null){
+            dto.setFuncionarioID(model.getFuncionarioModel().getId());
+        }
 
         return dto;
     }
@@ -32,13 +38,18 @@ public class SessaoMapper {
         SessaoModel model = new SessaoModel();
 
         model.setId(dto.getId());
-        model.setFuncionarioModel(dto.getFuncionarioDTO());
         model.setData(dto.getData());
-        model.setHora_inicio(dto.getHora_inicio());
-        model.setHora_fim(dto.getHora_fim());
-        model.setTempo_ocioso(dto.getTempo_ocioso());
-        model.setTotal_caixas(dto.getTotal_caixas());
+        model.setHoraInicio(dto.getHoraInicio());
+        model.setHoraFim(dto.getHoraFim());
+        model.setTempoOcioso(dto.getTempoOcioso());
+        model.setTotalCaixas(dto.getTotalCaixas());
         model.setAtiva(dto.getAtiva());
+
+        if(dto.getFuncionarioID() != null){
+            FuncionarioModel funcionarioModel = new FuncionarioModel();
+            funcionarioModel.setId(dto.getFuncionarioID());
+            model.setFuncionarioModel(funcionarioModel);
+        }
 
         return model;
     }

@@ -69,13 +69,13 @@ public class CaixaService {
 
         CaixaModel caixaSalva = caixaRepository.save(caixaModel);
 
-        Integer total = sessao.getTotal_caixas();
+        Integer total = sessao.getTotalCaixas();
 
         if(total == null){
             total = 0;
         }
 
-        sessao.setTotal_caixas(total + 1);
+        sessao.setTotalCaixas(total + 1);
 
         sessaoRepository.save(sessao);
 
