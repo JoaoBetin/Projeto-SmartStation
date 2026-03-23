@@ -242,8 +242,7 @@ tbody td{padding:10px 14px;font-size:12px}
 .func-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-bottom:18px}
 .func-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
 .func-card:hover{border-color:var(--border2);box-shadow:0 4px 20px rgba(0,0,0,.07);transform:translateY(-2px)}
-.func-card.ativo:hover{border-color:var(--gm)}
-.func-card.inativo{opacity:.72}
+.func-card.trabalhando:hover{border-color:var(--gm)}
 .func-card-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .func-avatar{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
 .func-nome{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
@@ -253,11 +252,11 @@ tbody td{padding:10px 14px;font-size:12px}
 .func-mat-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
 .func-mat{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
 .func-status-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px}
-.func-status-badge.ativo{background:var(--gl);color:var(--green)}
-.func-status-badge.inativo{background:#f1f5f9;color:#64748b}
+.func-status-badge.trabalhando{background:var(--gl);color:var(--green)}
+.func-status-badge.ocioso{background:#f1f5f9;color:#64748b}
 .func-status-dot{width:6px;height:6px;border-radius:50%}
-.func-status-badge.ativo .func-status-dot{background:var(--green);animation:blink 1.5s infinite}
-.func-status-badge.inativo .func-status-dot{background:#94a3b8}
+.func-status-badge.trabalhando .func-status-dot{background:var(--green);animation:blink 1.5s infinite}
+.func-status-badge.ocioso .func-status-dot{background:#94a3b8}
 .func-card-arrow{position:absolute;top:50%;right:16px;transform:translateY(-50%);font-size:16px;color:var(--t3);opacity:0;transition:opacity .2s,right .2s}
 .func-card:hover .func-card-arrow{opacity:1;right:14px}
 .func-stats-row{display:flex;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
@@ -325,11 +324,18 @@ export default function SmartStationDashboard() {
     return () => clearInterval(intervalo);
   }, []);
 
+  // ── Apenas funcionários contratados (ativo = true no model) aparecem na lista ──
+  const funcionariosVisiveis = funcionarios.filter(f => f.ativo);
+
   // ── Sessões e status do funcionário selecionado ──
   const sessions = selectedFunc ? sessoesPorFunc[selectedFunc.id] || [] : [];
-  const sessaoAtiva = sessions.find((s) => s.ativa) || sessions[sessions.length - 1] || null;
+  const sessaoAtiva = sessions.find((s) => s.ativa) || null;
+
+  // "trabalhando" = tem sessão com ativa = true
+  const estaTrabalhando = !!sessaoAtiva;
+
   const status = {
-    isActive: sessaoAtiva?.ativa ?? false,
+    isActive: estaTrabalhando,
     entryTime: sessaoAtiva?.entryTime ?? null,
     exitTime: sessaoAtiva?.exitTime ?? null,
   };
@@ -372,8 +378,12 @@ export default function SmartStationDashboard() {
     { id: "config", icon: "⚙", label: "Configurações" },
   ];
 
-  const ativosCount = funcionarios.filter(f => f.ativo).length;
-  const inativosCount = funcionarios.filter(f => !f.ativo).length;
+  // Contagens baseadas em sessão ativa (trabalhando agora), não no campo ativo do model
+  const trabalhandoCount = funcionariosVisiveis.filter(f => {
+    const funcSessions = sessoesPorFunc[f.id] || [];
+    return funcSessions.some(s => s.ativa);
+  }).length;
+  const ociososCount = funcionariosVisiveis.length - trabalhandoCount;
 
   const getPageTitle = () => {
     if (page === "funcionarios") return "Funcionários";
@@ -418,10 +428,11 @@ export default function SmartStationDashboard() {
           </div>
           <div className="sb-bot">
             <div className="st-pill">
-              <div className={`st-dot ${selectedFunc?.ativo ? "on" : "off"}`} />
+              {/* Sidebar pill: verde se funcionário selecionado tem sessão ativa */}
+              <div className={`st-dot ${estaTrabalhando ? "on" : "off"}`} />
               <div>
-                <div className="st-txt" style={{ color: selectedFunc?.ativo ? "var(--green)" : "var(--amber)" }}>
-                  {selectedFunc ? (selectedFunc.ativo ? "Bancada Ativa" : "Ociosa") : "Nenhum selecionado"}
+                <div className="st-txt" style={{ color: estaTrabalhando ? "var(--green)" : "var(--amber)" }}>
+                  {selectedFunc ? (estaTrabalhando ? "Trabalhando" : "Ocioso") : "Nenhum selecionado"}
                 </div>
                 <div className="st-sub">{now.toLocaleTimeString("pt-BR", { hour12: false })}</div>
               </div>
@@ -463,43 +474,49 @@ export default function SmartStationDashboard() {
             {/* ══ FUNCIONÁRIOS ══ */}
             {!loading && page === "funcionarios" && (
               <>
+                {/* Summary: total contratados, trabalhando agora, ociosos agora */}
                 <div className="func-summary">
                   <div className="func-summary-card">
                     <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>👥</div>
                     <div>
-                      <div className="func-summary-val">{funcionarios.length}</div>
+                      <div className="func-summary-val">{funcionariosVisiveis.length}</div>
                       <div className="func-summary-lbl">Total de funcionários</div>
                     </div>
                   </div>
                   <div className="func-summary-card">
                     <div className="func-summary-ico" style={{ background: "var(--gl)" }}>✅</div>
                     <div>
-                      <div className="func-summary-val" style={{ color: "var(--green)" }}>{ativosCount}</div>
-                      <div className="func-summary-lbl">Ativos agora</div>
+                      <div className="func-summary-val" style={{ color: "var(--green)" }}>{trabalhandoCount}</div>
+                      <div className="func-summary-lbl">Trabalhando agora</div>
                     </div>
                   </div>
                   <div className="func-summary-card">
                     <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>⏸</div>
                     <div>
-                      <div className="func-summary-val" style={{ color: "#64748b" }}>{inativosCount}</div>
-                      <div className="func-summary-lbl">Inativos</div>
+                      <div className="func-summary-val" style={{ color: "#64748b" }}>{ociososCount}</div>
+                      <div className="func-summary-lbl">Ociosos</div>
                     </div>
                   </div>
                 </div>
 
-                {funcionarios.length === 0 && !erro && (
+                {funcionariosVisiveis.length === 0 && !erro && (
                   <div className="loading-box">Nenhum funcionário cadastrado no sistema.</div>
                 )}
 
                 <div className="func-grid">
-                  {funcionarios.map(func => {
+                  {/* Apenas funcionários com ativo = true no model aparecem aqui */}
+                  {funcionariosVisiveis.map(func => {
                     const { cor, corBg } = getAvatarColor(func.id);
                     const funcSessions = sessoesPorFunc[func.id] || [];
                     const funcTotalCaixas = funcSessions.reduce((a, s) => a + (s.totalCaixas || 0), 0);
+
+                    // "trabalhando" = tem pelo menos uma sessão com ativa = true
+                    const funcTrabalhando = funcSessions.some(s => s.ativa);
+
                     return (
                       <div
                         key={func.id}
-                        className={`func-card ${func.ativo ? "ativo" : "inativo"}`}
+                        className={`func-card ${funcTrabalhando ? "trabalhando" : ""}`}
                         onClick={() => handleSelectFunc({ ...func, cor, corBg, avatar: getAvatar(func.nome) })}
                       >
                         <div className="func-card-top">
@@ -510,9 +527,10 @@ export default function SmartStationDashboard() {
                             <div className="func-nome">{func.nome}</div>
                             <div className="func-cargo">{func.cargo}</div>
                           </div>
-                          <div className={`func-status-badge ${func.ativo ? "ativo" : "inativo"}`}>
+                          {/* Badge: "Trabalhando" se tem sessão ativa, "Ocioso" caso contrário */}
+                          <div className={`func-status-badge ${funcTrabalhando ? "trabalhando" : "ocioso"}`}>
                             <div className="func-status-dot" />
-                            {func.ativo ? "Ativo" : "Inativo"}
+                            {funcTrabalhando ? "Trabalhando" : "Ocioso"}
                           </div>
                         </div>
 
@@ -568,8 +586,9 @@ export default function SmartStationDashboard() {
                       <div className="func-header-mat">Mat. {selectedFunc.matricula} · {selectedFunc.cargo}</div>
                     </div>
                     <div style={{ marginLeft: "auto" }}>
-                      <span className={`badge ${selectedFunc.ativo ? "bg" : "bgray"}`}>
-                        {selectedFunc.ativo ? "● Ativo" : "○ Inativo"}
+                      {/* Badge da dashboard: baseado em sessão ativa, não no campo ativo do model */}
+                      <span className={`badge ${estaTrabalhando ? "bg" : "bgray"}`}>
+                        {estaTrabalhando ? "● Trabalhando" : "○ Ocioso"}
                       </span>
                     </div>
                   </div>
