@@ -130,12 +130,12 @@ class ApiClient:
         agora = datetime.now(TZ_LOCAL)
 
         payload = {
-            "funcionarioModel": {"id": funcionario_id},
-            "data": agora.date().isoformat(),               
-            "hora_inicio": agora.strftime("%H:%M:%S"),      
-            "hora_fim": None,
-            "tempo_ocioso": None,
-            "total_caixas": 0,
+            "funcionarioID": funcionario_id,          # CORRIGIDO: era "funcionarioModel": {"id": ...}
+            "data": agora.date().isoformat(),
+            "horaInicio": agora.strftime("%H:%M:%S"),  # CORRIGIDO: era "hora_inicio"
+            "horaFim": None,                           # CORRIGIDO: era "hora_fim"
+            "tempoOcioso": None,                       # CORRIGIDO: era "tempo_ocioso"
+            "totalCaixas": 0,                          # CORRIGIDO: era "total_caixas"
             "ativa": True
         }
 
@@ -172,8 +172,8 @@ class ApiClient:
         tempo_ocioso_str = f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
         payload = {
-            "hora_fim": hora_fim.strftime("%H:%M:%S"),
-            "tempo_ocioso": tempo_ocioso_str,
+            "horaFim": hora_fim.strftime("%H:%M:%S"),  # CORRIGIDO: era "hora_fim"
+            "tempoOcioso": tempo_ocioso_str,            # CORRIGIDO: era "tempo_ocioso"
             "ativa": False
         }
 
