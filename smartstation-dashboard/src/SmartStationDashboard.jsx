@@ -594,33 +594,29 @@ export default function SmartStationDashboard() {
                   </div>
                 )}
 
-                <div className={`banner ${status.isActive ? "on" : "off"}`}>
-                  <div className="ban-icon">{status.isActive ? "📦" : "⏳"}</div>
-                  <div>
-                    <div className="ban-lbl">Status da Bancada</div>
-                    <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
-                      {status.isActive ? "Caixa em Processamento" : "Estação Ociosa"}
-                    </div>
-                    <div className="ban-timer">{formatDuration(elapsed)}</div>
-                  </div>
-                  <div className="ban-div" />
-                  <div className="ban-ev">
-                    <div className="ban-ev-lbl">📥 Caixa Entrou</div>
-                    <div className="ban-ev-time">{formatTime(status.entryTime)}</div>
-                    <div className="ban-ev-date">{formatDate(status.entryTime)}</div>
-                  </div>
-                  <div className="ban-div" />
-                  <div className="ban-ev">
-                    <div className="ban-ev-lbl">📤 Caixa Saiu</div>
-                    <div className="ban-ev-time">
-                      {status.isActive
-                        ? <span style={{ color: "var(--t3)", fontSize: 15 }}>Aguardando…</span>
-                        : formatTime(status.exitTime)
-                      }
-                    </div>
-                    {!status.isActive && <div className="ban-ev-date">{formatDate(status.exitTime)}</div>}
-                  </div>
-                </div>
+               <div className={`banner ${status.isActive ? "on" : "off"}`}>
+  <div className="ban-icon">{status.isActive ? "🟢" : "⏸"}</div>
+  <div>
+    <div className="ban-lbl">Status da Sessão</div>
+    <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
+      {status.isActive ? "Sessão em Andamento" : "Sem Sessão Ativa"}
+    </div>
+    <div className="ban-timer">
+      {status.isActive ? formatDuration(elapsed) : "00:00:00"}
+    </div>
+  </div>
+  <div className="ban-div" />
+  <div className="ban-ev">
+    <div className="ban-ev-lbl">🕐 Sessão Iniciada</div>
+    <div className="ban-ev-time">
+      {status.isActive
+        ? formatTime(status.entryTime)
+        : <span style={{ color: "var(--t3)", fontSize: 15 }}>—</span>
+      }
+    </div>
+    {status.isActive && <div className="ban-ev-date">{formatDate(status.entryTime)}</div>}
+  </div>
+</div>
 
                 <div className="kpi-row">
                   <div className="kpi">
