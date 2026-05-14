@@ -1,5 +1,6 @@
-package SmartStation.dashboard_api.Funcionario;
+package Repositorys;
 
+import Models.FuncionarioModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

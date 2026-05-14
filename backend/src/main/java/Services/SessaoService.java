@@ -1,7 +1,11 @@
-package SmartStation.dashboard_api.Sessao;
+package Services;
 
-import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
-import SmartStation.dashboard_api.Funcionario.FuncionarioRepository;
+import DTOs.SessaoDTO;
+import Mappers.SessaoMapper;
+import Models.FuncionarioModel;
+import Models.SessaoModel;
+import Repositorys.FuncionarioRepository;
+import Repositorys.SessaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

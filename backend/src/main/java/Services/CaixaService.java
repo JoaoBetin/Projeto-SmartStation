@@ -1,7 +1,11 @@
-package SmartStation.dashboard_api.Caixa;
+package Services;
 
-import SmartStation.dashboard_api.Sessao.SessaoModel;
-import SmartStation.dashboard_api.Sessao.SessaoRepository;
+import DTOs.CaixaDTO;
+import Mappers.CaixaMapper;
+import Models.CaixaModel;
+import Repositorys.CaixaRepository;
+import Models.SessaoModel;
+import Repositorys.SessaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

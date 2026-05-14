@@ -1,6 +1,8 @@
-package SmartStation.dashboard_api.Sessao;
+package Mappers;
 
-import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
+import DTOs.SessaoDTO;
+import Models.FuncionarioModel;
+import Models.SessaoModel;
 import org.springframework.stereotype.Component;
 
 @Component

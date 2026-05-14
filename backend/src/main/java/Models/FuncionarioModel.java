@@ -1,12 +1,11 @@
-package SmartStation.dashboard_api.Funcionario;
+package Models;
 
-import SmartStation.dashboard_api.Sessao.SessaoModel;
+import Enums.Cargo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.hibernate.annotations.IdGeneratorType;
 
 import java.util.List;
 

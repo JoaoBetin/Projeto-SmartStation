@@ -1,5 +1,7 @@
-package SmartStation.dashboard_api.Sessao;
+package Controllers;
 
+import DTOs.SessaoDTO;
+import Services.SessaoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

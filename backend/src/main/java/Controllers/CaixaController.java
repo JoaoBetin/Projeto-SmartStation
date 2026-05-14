@@ -1,5 +1,7 @@
-package SmartStation.dashboard_api.Caixa;
+package Controllers;
 
+import DTOs.CaixaDTO;
+import Services.CaixaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

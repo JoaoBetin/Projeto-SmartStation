@@ -1,5 +1,9 @@
-package SmartStation.dashboard_api.Funcionario;
+package Services;
 
+import DTOs.FuncionarioDTO;
+import Mappers.FuncionarioMapper;
+import Models.FuncionarioModel;
+import Repositorys.FuncionarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

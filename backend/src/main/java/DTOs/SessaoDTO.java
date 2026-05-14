@@ -1,7 +1,5 @@
-package SmartStation.dashboard_api.Sessao;
+package DTOs;
 
-import SmartStation.dashboard_api.Funcionario.FuncionarioDTO;
-import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

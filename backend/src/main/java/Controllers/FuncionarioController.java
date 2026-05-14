@@ -1,5 +1,7 @@
-package SmartStation.dashboard_api.Funcionario;
+package Controllers;
 
+import DTOs.FuncionarioDTO;
+import Services.FuncionarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,5 @@
-package SmartStation.dashboard_api.Caixa;
+package DTOs;
 
-import SmartStation.dashboard_api.Sessao.SessaoModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

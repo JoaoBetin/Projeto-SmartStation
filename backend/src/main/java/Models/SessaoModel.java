@@ -1,6 +1,5 @@
-package SmartStation.dashboard_api.Sessao;
+package Models;
 
-import SmartStation.dashboard_api.Funcionario.FuncionarioModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

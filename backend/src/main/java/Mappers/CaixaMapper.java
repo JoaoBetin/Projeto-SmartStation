@@ -1,6 +1,8 @@
-package SmartStation.dashboard_api.Caixa;
+package Mappers;
 
-import SmartStation.dashboard_api.Sessao.SessaoModel;
+import DTOs.CaixaDTO;
+import Models.CaixaModel;
+import Models.SessaoModel;
 import org.springframework.stereotype.Component;
 
 @Component

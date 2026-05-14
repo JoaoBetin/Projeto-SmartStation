@@ -1,4 +1,4 @@
-package SmartStation.dashboard_api.Funcionario;
+package Enums;
 
 public enum Cargo {
     ADMIN,

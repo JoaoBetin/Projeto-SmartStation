@@ -1,6 +1,7 @@
-package SmartStation.dashboard_api.Funcionario;
+package Mappers;
 
-import SmartStation.dashboard_api.Sessao.SessaoMapper;
+import DTOs.FuncionarioDTO;
+import Models.FuncionarioModel;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;

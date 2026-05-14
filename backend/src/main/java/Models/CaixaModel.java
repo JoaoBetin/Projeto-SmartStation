@@ -1,6 +1,5 @@
-package SmartStation.dashboard_api.Caixa;
+package Models;
 
-import SmartStation.dashboard_api.Sessao.SessaoModel;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
