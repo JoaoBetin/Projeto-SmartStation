@@ -39,7 +39,7 @@ function adaptarSessao(s) {
   };
 }
 
-// ─── AVATAR COLORS ──────────────────────────────────────────────────────────
+// ─── AVATAR ──────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   { cor: "#16a34a", corBg: "#dcfce7" },
   { cor: "#2563eb", corBg: "#dbeafe" },
@@ -56,7 +56,7 @@ function getAvatar(nome) {
   return (parts[0][0] + (parts[1] ? parts[1][0] : parts[0][1] ?? "")).toUpperCase();
 }
 
-// ─── SPARKLINE ───────────────────────────────────────────────────────────────
+// ─── SPARKLINE ────────────────────────────────────────────────────────────────
 function Sparkline({ data, color, width = 120, height = 36 }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data, 1);
@@ -139,7 +139,7 @@ function ActivityChart({ sessions }) {
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
+// ─── STYLES ───────────────────────────────────────────────────────────────────
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -166,14 +166,60 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .nav-btn:hover{background:var(--bg);color:var(--text)}
 .nav-btn.active{background:var(--gl);color:var(--green);font-weight:600}
 .nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
-.sb-bot{margin-top:auto;padding:14px 10px;border-top:1px solid var(--border)}
-.st-pill{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:8px;padding:10px 12px}
+.sb-bot{margin-top:auto;border-top:1px solid var(--border)}
+
+/* ── USER PILL NA SIDEBAR ── */
+.user-pill {
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+.user-avatar-sm {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name-sm {
+  font-size: 12px; font-weight: 600;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.user-role-sm {
+  font-size: 10px; color: var(--t3);
+  font-family: var(--mono);
+}
+.logout-btn {
+  background: none; border: none;
+  cursor: pointer; padding: 4px;
+  color: var(--t3); font-size: 14px;
+  border-radius: 5px;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.logout-btn:hover { background: var(--bg); color: var(--red); }
+
+.st-pill{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:8px;padding:10px 12px;margin:0 10px 12px}
 .st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .st-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.2);animation:blink 1.5s infinite}
 .st-dot.off{background:var(--amber);box-shadow:0 0 0 3px rgba(217,119,6,.2);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 .st-txt{font-size:12px;font-weight:600}
 .st-sub{font-size:10px;color:var(--t3);font-family:var(--mono)}
+
+/* ── BADGE ADM NA TOPBAR ── */
+.adm-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px;
+  background: #fef3c7;
+  color: #d97706;
+  border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+}
 
 .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
@@ -213,8 +259,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .kpi-spark{margin-top:8px}
 .kpi-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;margin-top:5px;padding:2px 7px;border-radius:20px}
 .tu{background:var(--gl);color:var(--green)}.td2{background:var(--rl);color:var(--red)}.tw{background:var(--al);color:var(--amber)}
-.eff-wrap{background:var(--bg);border-radius:20px;height:7px;overflow:hidden;margin-top:7px}
-.eff-fill{height:100%;border-radius:20px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
 
 .sec{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;overflow:hidden}
 .sec-head{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border)}
@@ -279,20 +323,41 @@ tbody td{padding:10px 14px;font-size:12px}
 @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.kpi-row{grid-template-columns:1fr 1fr}}
 `;
 
-// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-export default function SmartStationDashboard() {
-  const [page, setPage] = useState("funcionarios");
-  const [selectedFunc, setSelectedFunc] = useState(null);
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+export default function SmartStationDashboard({ usuarioLogado, onLogout }) {
+  const isAdmin = usuarioLogado?.isAdmin ?? false;
+
+  // Estado de página — FUNCIONÁRIO começa direto no dashboard próprio
+  const [page, setPage] = useState(isAdmin ? "funcionarios" : "dashboard");
+
+  // FUNCIONÁRIO já tem selectedFunc pré-definido como ele mesmo;
+  // ADM começa sem ninguém selecionado.
+  const [selectedFunc, setSelectedFunc] = useState(() => {
+    if (!isAdmin) {
+      const { cor, corBg } = getAvatarColor(usuarioLogado.id);
+      return {
+        id: usuarioLogado.id,
+        nome: usuarioLogado.nome,
+        matricula: usuarioLogado.matricula,
+        cargo: usuarioLogado.cargo,
+        cor,
+        corBg,
+        avatar: getAvatar(usuarioLogado.nome),
+      };
+    }
+    return null;
+  });
+
   const [elapsed, setElapsed] = useState(0);
   const [now, setNow] = useState(new Date());
 
-  // ── Estado real da API ──
+  // ── Dados da API ──
   const [funcionarios, setFuncionarios] = useState([]);
   const [sessoesPorFunc, setSessoesPorFunc] = useState({});
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
-  // ── Carregamento com polling ──
+  // ── Polling ──
   useEffect(() => {
     async function carregar() {
       try {
@@ -324,14 +389,15 @@ export default function SmartStationDashboard() {
     return () => clearInterval(intervalo);
   }, []);
 
-  // ── Apenas funcionários contratados (ativo = true no model) aparecem na lista ──
-  const funcionariosVisiveis = funcionarios.filter(f => f.ativo);
+  // ── Filtragem de funcionários visíveis ──
+  // ADM vê todos com ativo=true; FUNCIONÁRIO só vê a si mesmo
+  const funcionariosVisiveis = isAdmin
+    ? funcionarios.filter(f => f.ativo)
+    : funcionarios.filter(f => f.id === usuarioLogado.id && f.ativo);
 
-  // ── Sessões e status do funcionário selecionado ──
+  // ── Sessões e status do func selecionado ──
   const sessions = selectedFunc ? sessoesPorFunc[selectedFunc.id] || [] : [];
   const sessaoAtiva = sessions.find((s) => s.ativa) || null;
-
-  // "trabalhando" = tem sessão com ativa = true
   const estaTrabalhando = !!sessaoAtiva;
 
   const status = {
@@ -340,11 +406,13 @@ export default function SmartStationDashboard() {
     exitTime: sessaoAtiva?.exitTime ?? null,
   };
 
+  // ── Relógio ──
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  // ── Cronômetro de sessão ──
   useEffect(() => {
     if (!status.entryTime) return;
     const ref = status.entryTime;
@@ -361,24 +429,27 @@ export default function SmartStationDashboard() {
   const sparkIdle = sessions.slice(-10).map(s => (s.idleBefore || 0) / 1000);
   const sparkCount = sessions.slice(-10).map((_, i) => i + 1);
 
+  // ── Navegação ──
   const handleSelectFunc = (func) => {
     setSelectedFunc(func);
     setPage("dashboard");
   };
 
   const handleBack = () => {
+    // FUNCIONÁRIO não pode voltar para lista de todos
+    if (!isAdmin) return;
     setPage("funcionarios");
     setSelectedFunc(null);
   };
 
+  // Itens de navegação: FUNCIONÁRIO não vê "Funcionários"
   const navItems = [
-    { id: "funcionarios", icon: "👥", label: "Funcionários" },
+    ...(isAdmin ? [{ id: "funcionarios", icon: "👥", label: "Funcionários" }] : []),
     { id: "dashboard", icon: "▦", label: "Visão Geral" },
     { id: "history", icon: "≡", label: "Histórico" },
     { id: "config", icon: "⚙", label: "Configurações" },
   ];
 
-  // Contagens baseadas em sessão ativa (trabalhando agora), não no campo ativo do model
   const trabalhandoCount = funcionariosVisiveis.filter(f => {
     const funcSessions = sessoesPorFunc[f.id] || [];
     return funcSessions.some(s => s.ativa);
@@ -392,6 +463,8 @@ export default function SmartStationDashboard() {
     if (page === "config") return "Configurações";
     return "";
   };
+
+  const userAvatarColor = getAvatarColor(usuarioLogado.id);
 
   return (
     <>
@@ -407,6 +480,7 @@ export default function SmartStationDashboard() {
               <div className="logo-ver">v1.0.0</div>
             </div>
           </div>
+
           <div className="sb-sec">
             <div className="sb-sec-label">Menu</div>
             {navItems.map(n => (
@@ -414,7 +488,7 @@ export default function SmartStationDashboard() {
                 key={n.id}
                 className={`nav-btn ${page === n.id ? "active" : ""}`}
                 onClick={() => {
-                  if (n.id === "funcionarios") {
+                  if (n.id === "funcionarios" && isAdmin) {
                     setPage("funcionarios");
                     setSelectedFunc(null);
                   } else {
@@ -426,9 +500,10 @@ export default function SmartStationDashboard() {
               </button>
             ))}
           </div>
+
           <div className="sb-bot">
+            {/* Status pill */}
             <div className="st-pill">
-              {/* Sidebar pill: verde se funcionário selecionado tem sessão ativa */}
               <div className={`st-dot ${estaTrabalhando ? "on" : "off"}`} />
               <div>
                 <div className="st-txt" style={{ color: estaTrabalhando ? "var(--green)" : "var(--amber)" }}>
@@ -436,6 +511,27 @@ export default function SmartStationDashboard() {
                 </div>
                 <div className="st-sub">{now.toLocaleTimeString("pt-BR", { hour12: false })}</div>
               </div>
+            </div>
+
+            {/* User pill com logout */}
+            <div className="user-pill">
+              <div
+                className="user-avatar-sm"
+                style={{ background: userAvatarColor.corBg, color: userAvatarColor.cor }}
+              >
+                {getAvatar(usuarioLogado.nome)}
+              </div>
+              <div className="user-info">
+                <div className="user-name-sm">{usuarioLogado.nome.split(" ")[0]}</div>
+                <div className="user-role-sm">{usuarioLogado.cargo} · {usuarioLogado.matricula}</div>
+              </div>
+              <button
+                className="logout-btn"
+                onClick={onLogout}
+                title="Sair do sistema"
+              >
+                ↩
+              </button>
             </div>
           </div>
         </aside>
@@ -448,7 +544,12 @@ export default function SmartStationDashboard() {
               <div className="tb-sub">{formatDate(new Date().toISOString())} · Turno atual</div>
             </div>
             <div className="tb-right">
-              {(page === "dashboard" || page === "history") && selectedFunc && (
+              {/* Badge de cargo na topbar */}
+              {isAdmin && (
+                <span className="adm-badge">👑 ADMIN</span>
+              )}
+              {/* Botão de voltar só aparece para ADM quando está em dash/history */}
+              {isAdmin && (page === "dashboard" || page === "history") && selectedFunc && (
                 <button className="back-btn" onClick={handleBack}>
                   ← Funcionários
                 </button>
@@ -459,22 +560,19 @@ export default function SmartStationDashboard() {
 
           <div className="content">
 
-            {/* Feedback de erro */}
             {erro && (
               <div className="erro-box">
                 ⚠ Erro ao conectar com o backend: {erro}
               </div>
             )}
 
-            {/* Loading inicial */}
             {loading && (
               <div className="loading-box">Carregando dados do backend…</div>
             )}
 
-            {/* ══ FUNCIONÁRIOS ══ */}
-            {!loading && page === "funcionarios" && (
+            {/* ══ FUNCIONÁRIOS (só ADM) ══ */}
+            {!loading && page === "funcionarios" && isAdmin && (
               <>
-                {/* Summary: total contratados, trabalhando agora, ociosos agora */}
                 <div className="func-summary">
                   <div className="func-summary-card">
                     <div className="func-summary-ico" style={{ background: "#f1f5f9" }}>👥</div>
@@ -504,13 +602,10 @@ export default function SmartStationDashboard() {
                 )}
 
                 <div className="func-grid">
-                  {/* Apenas funcionários com ativo = true no model aparecem aqui */}
                   {funcionariosVisiveis.map(func => {
                     const { cor, corBg } = getAvatarColor(func.id);
                     const funcSessions = sessoesPorFunc[func.id] || [];
                     const funcTotalCaixas = funcSessions.reduce((a, s) => a + (s.totalCaixas || 0), 0);
-
-                    // "trabalhando" = tem pelo menos uma sessão com ativa = true
                     const funcTrabalhando = funcSessions.some(s => s.ativa);
 
                     return (
@@ -527,7 +622,6 @@ export default function SmartStationDashboard() {
                             <div className="func-nome">{func.nome}</div>
                             <div className="func-cargo">{func.cargo}</div>
                           </div>
-                          {/* Badge: "Trabalhando" se tem sessão ativa, "Ocioso" caso contrário */}
                           <div className={`func-status-badge ${funcTrabalhando ? "trabalhando" : "ocioso"}`}>
                             <div className="func-status-dot" />
                             {funcTrabalhando ? "Trabalhando" : "Ocioso"}
@@ -586,7 +680,6 @@ export default function SmartStationDashboard() {
                       <div className="func-header-mat">Mat. {selectedFunc.matricula} · {selectedFunc.cargo}</div>
                     </div>
                     <div style={{ marginLeft: "auto" }}>
-                      {/* Badge da dashboard: baseado em sessão ativa, não no campo ativo do model */}
                       <span className={`badge ${estaTrabalhando ? "bg" : "bgray"}`}>
                         {estaTrabalhando ? "● Trabalhando" : "○ Ocioso"}
                       </span>
@@ -594,29 +687,29 @@ export default function SmartStationDashboard() {
                   </div>
                 )}
 
-               <div className={`banner ${status.isActive ? "on" : "off"}`}>
-  <div className="ban-icon">{status.isActive ? "🟢" : "⏸"}</div>
-  <div>
-    <div className="ban-lbl">Status da Sessão</div>
-    <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
-      {status.isActive ? "Sessão em Andamento" : "Sem Sessão Ativa"}
-    </div>
-    <div className="ban-timer">
-      {status.isActive ? formatDuration(elapsed) : "00:00:00"}
-    </div>
-  </div>
-  <div className="ban-div" />
-  <div className="ban-ev">
-    <div className="ban-ev-lbl">🕐 Sessão Iniciada</div>
-    <div className="ban-ev-time">
-      {status.isActive
-        ? formatTime(status.entryTime)
-        : <span style={{ color: "var(--t3)", fontSize: 15 }}>—</span>
-      }
-    </div>
-    {status.isActive && <div className="ban-ev-date">{formatDate(status.entryTime)}</div>}
-  </div>
-</div>
+                <div className={`banner ${status.isActive ? "on" : "off"}`}>
+                  <div className="ban-icon">{status.isActive ? "🟢" : "⏸"}</div>
+                  <div>
+                    <div className="ban-lbl">Status da Sessão</div>
+                    <div className={`ban-st ${status.isActive ? "on" : "off"}`}>
+                      {status.isActive ? "Sessão em Andamento" : "Sem Sessão Ativa"}
+                    </div>
+                    <div className="ban-timer">
+                      {status.isActive ? formatDuration(elapsed) : "00:00:00"}
+                    </div>
+                  </div>
+                  <div className="ban-div" />
+                  <div className="ban-ev">
+                    <div className="ban-ev-lbl">🕐 Sessão Iniciada</div>
+                    <div className="ban-ev-time">
+                      {status.isActive
+                        ? formatTime(status.entryTime)
+                        : <span style={{ color: "var(--t3)", fontSize: 15 }}>—</span>
+                      }
+                    </div>
+                    {status.isActive && <div className="ban-ev-date">{formatDate(status.entryTime)}</div>}
+                  </div>
+                </div>
 
                 <div className="kpi-row">
                   <div className="kpi">
@@ -674,7 +767,7 @@ export default function SmartStationDashboard() {
                     <div>
                       <div className="sec-title">Histórico Completo</div>
                       <div className="sec-sub">
-                        {selectedFunc ? `Registros de ${selectedFunc.nome.split(" ")[0]}` : "Todos os registros do turno"}
+                        {selectedFunc ? `Registros de ${selectedFunc.nome.split(" ")[0]}` : "Selecione um funcionário"}
                       </div>
                     </div>
                     <span className="badge bb">{sessions.length} registros</span>
@@ -726,7 +819,7 @@ export default function SmartStationDashboard() {
               </div>
             )}
 
-            <div className="footer">SMARTSTATION v1.0 · API: {API_BASE}</div>
+            <div className="footer">SMARTSTATION v1.0 · API: {API_BASE} · Usuário: {usuarioLogado.nome}</div>
           </div>
         </div>
       </div>
