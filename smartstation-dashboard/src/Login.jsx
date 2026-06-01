@@ -34,7 +34,6 @@ body {
   overflow: hidden;
 }
 
-/* ── CANVAS DE FUNDO ── */
 .login-bg {
   position: fixed;
   inset: 0;
@@ -88,7 +87,6 @@ body {
   100% { transform: scale(1.15) translate(20px,-20px); }
 }
 
-/* Partículas estáticas decorativas */
 .particle {
   position: absolute;
   width: 2px; height: 2px;
@@ -102,7 +100,6 @@ body {
   50% { opacity: .5; }
 }
 
-/* ── WRAPPER ── */
 .login-wrapper {
   position: relative;
   z-index: 1;
@@ -113,7 +110,6 @@ body {
   padding: 24px;
 }
 
-/* ── CARD ── */
 .login-card {
   width: 100%;
   max-width: 420px;
@@ -134,7 +130,6 @@ body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* linha decorativa no topo do card */
 .card-topline {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -143,7 +138,6 @@ body {
   opacity: .6;
 }
 
-/* ── LOGO ÁREA ── */
 .login-logo {
   display: flex;
   align-items: center;
@@ -169,7 +163,6 @@ body {
   border-radius: 16px;
   border: 1px solid rgba(34,197,94,.12);
 }
-.logo-texts {}
 .logo-name {
   font-size: 18px;
   font-weight: 700;
@@ -185,7 +178,6 @@ body {
   margin-top: 1px;
 }
 
-/* ── HEADING ── */
 .login-heading {
   font-size: 22px;
   font-weight: 700;
@@ -200,7 +192,6 @@ body {
   line-height: 1.5;
 }
 
-/* ── FORM ── */
 .login-form { display: flex; flex-direction: column; gap: 16px; }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -272,7 +263,6 @@ body {
 }
 .toggle-pass:hover { color: var(--t2); }
 
-/* ── HINT de senha ── */
 .field-hint {
   font-size: 10px;
   color: var(--t3);
@@ -280,7 +270,6 @@ body {
   letter-spacing: .5px;
 }
 
-/* ── ERRO ── */
 .erro-msg {
   display: flex;
   align-items: center;
@@ -301,7 +290,6 @@ body {
   40%,60% { transform: translateX(3px); }
 }
 
-/* ── BOTÃO ── */
 .btn-login {
   margin-top: 4px;
   width: 100%;
@@ -335,15 +323,9 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(34,197,94,.3);
 }
-.btn-login:active:not(:disabled) {
-  transform: translateY(0);
-}
-.btn-login:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
+.btn-login:active:not(:disabled) { transform: translateY(0); }
+.btn-login:disabled { opacity: .6; cursor: not-allowed; }
 
-/* Spinner */
 .spinner {
   width: 16px; height: 16px;
   border: 2px solid rgba(10,26,14,.3);
@@ -353,7 +335,6 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── DIVIDER ── */
 .login-divider {
   display: flex;
   align-items: center;
@@ -363,11 +344,7 @@ body {
 .divider-line { flex: 1; height: 1px; background: var(--border); }
 .divider-text { font-size: 10px; color: var(--t3); font-family: var(--mono); letter-spacing: 1px; }
 
-/* ── BADGE DE ROLES ── */
-.roles-info {
-  display: flex;
-  gap: 8px;
-}
+.roles-info { display: flex; gap: 8px; }
 .role-badge {
   flex: 1;
   background: var(--surface2);
@@ -379,22 +356,9 @@ body {
 }
 .role-badge:hover { border-color: var(--border2); }
 .role-icon { font-size: 18px; margin-bottom: 4px; }
-.role-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--t2);
-  letter-spacing: .5px;
-  display: block;
-}
-.role-desc {
-  font-size: 9px;
-  color: var(--t3);
-  font-family: var(--mono);
-  margin-top: 2px;
-  display: block;
-}
+.role-name { font-size: 11px; font-weight: 700; color: var(--t2); letter-spacing: .5px; display: block; }
+.role-desc { font-size: 9px; color: var(--t3); font-family: var(--mono); margin-top: 2px; display: block; }
 
-/* ── FOOTER DO CARD ── */
 .card-footer {
   margin-top: 24px;
   padding-top: 16px;
@@ -403,11 +367,7 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-.card-footer-text {
-  font-size: 10px;
-  color: var(--t3);
-  font-family: var(--mono);
-}
+.card-footer-text { font-size: 10px; color: var(--t3); font-family: var(--mono); }
 .status-pill {
   display: flex;
   align-items: center;
@@ -430,7 +390,6 @@ body {
 }
 `;
 
-// Partículas decorativas
 const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
   top: `${10 + Math.floor(Math.sin(i * 1.7) * 40 + 40)}%`,
   left: `${10 + Math.floor(Math.cos(i * 1.3) * 40 + 40)}%`,
@@ -456,55 +415,48 @@ export default function Login({ onLogin }) {
 
     setLoading(true);
     try {
-      // Busca todos os funcionários
-      const res = await fetch("http://localhost:8080/funcionario/listar");
+      const res = await fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matricula: Number(matricula.trim()),
+          senha: senha.trim(),
+        }),
+      });
+
+      if (res.status === 401) {
+        setErro("Matrícula ou senha incorretos.");
+        return;
+      }
+
+      if (res.status === 403) {
+        const msg = await res.text();
+        setErro(
+          msg.toLowerCase().includes("inativo")
+            ? "Funcionário inativo. Contate o administrador."
+            : "Acesso negado para este perfil."
+        );
+        return;
+      }
+
+      if (res.status === 400) {
+        setErro("Matrícula e senha são obrigatórias.");
+        return;
+      }
 
       if (!res.ok) {
-        setErro("Não foi possível conectar ao servidor. Verifique se o backend está rodando.");
+        setErro("Erro ao conectar com o servidor. Verifique se o backend está rodando.");
         return;
       }
 
-      const funcionarios = await res.json();
+      const usuario = await res.json();
 
-      // Procura pelo RA/matrícula
-      const match = funcionarios.find(
-        (f) => String(f.matricula) === String(matricula.trim())
-      );
-
-      if (!match) {
-        setErro("Matrícula não encontrada no sistema.");
-        return;
-      }
-
-      if (!match.ativo) {
-        setErro("Funcionário inativo. Contate o administrador.");
-        return;
-      }
-
-      // Validação de senha (senha padrão = "smart" + matrícula, ADM pode ter senha "admin")
-      // ADM: senha "admin123" ou "smart" + matricula
-      // FUNCIONÁRIO: senha "smart" + matricula
-      const senhaEsperadaPadrao = `smart${matricula.trim()}`;
-      const senhaEsperadaAdmin = "admin123";
-
-      const isAdmin = match.cargo === "ADMIN";
-      const senhaOk = isAdmin
-        ? senha === senhaEsperadaAdmin || senha === senhaEsperadaPadrao
-        : senha === senhaEsperadaPadrao;
-
-      if (!senhaOk) {
-        setErro("Senha incorreta.");
-        return;
-      }
-
-      // Login bem-sucedido
       onLogin({
-        id: match.id,
-        nome: match.nome,
-        matricula: match.matricula,
-        cargo: match.cargo,
-        ativo: match.ativo,
-        isAdmin: isAdmin,
+        id: usuario.id,
+        nome: usuario.nome,
+        matricula: usuario.matricula,
+        cargo: usuario.cargo,
+        isAdmin: usuario.cargo === "ADMIN",
       });
 
     } catch (err) {
@@ -518,7 +470,6 @@ export default function Login({ onLogin }) {
     <>
       <style>{css}</style>
 
-      {/* Fundo animado */}
       <div className="login-bg">
         <div className="grid-lines" />
         <div className="orb orb-1" />
@@ -542,7 +493,6 @@ export default function Login({ onLogin }) {
         <div className="login-card">
           <div className="card-topline" />
 
-          {/* Logo */}
           <div className="login-logo">
             <div className="logo-icon">📦</div>
             <div className="logo-texts">
@@ -551,15 +501,12 @@ export default function Login({ onLogin }) {
             </div>
           </div>
 
-          {/* Heading */}
           <div className="login-heading">Acesso ao Sistema</div>
           <div className="login-sub">
             Entre com sua matrícula e senha para acessar o painel.
           </div>
 
-          {/* Form */}
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* Matrícula */}
             <div className="field">
               <label className="field-label">
                 <span className="field-label-icon">🪪</span>
@@ -579,7 +526,6 @@ export default function Login({ onLogin }) {
               </div>
             </div>
 
-            {/* Senha */}
             <div className="field">
               <label className="field-label">
                 <span className="field-label-icon">🔒</span>
@@ -601,13 +547,12 @@ export default function Login({ onLogin }) {
                   onClick={() => setShowPass(!showPass)}
                   tabIndex={-1}
                 >
-                  {showPass ? "👁️" : "👁️"}
+                  👁️
                 </button>
               </div>
-              <span className="field-hint">Padrão: smart + matrícula &nbsp;·&nbsp; ADM: admin123</span>
+              <span className="field-hint">Padrão: smart + matrícula &nbsp;·&nbsp; ADM também aceita: admin123</span>
             </div>
 
-            {/* Erro */}
             {erro && (
               <div className="erro-msg">
                 <span>⚠️</span>
@@ -615,7 +560,6 @@ export default function Login({ onLogin }) {
               </div>
             )}
 
-            {/* Botão */}
             <button className="btn-login" type="submit" disabled={loading}>
               {loading
                 ? <><div className="spinner" /> Verificando...</>
@@ -624,7 +568,6 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          {/* Divider + roles */}
           <div className="login-divider" style={{ marginTop: 20 }}>
             <div className="divider-line" />
             <div className="divider-text">NÍVEIS DE ACESSO</div>
@@ -644,7 +587,6 @@ export default function Login({ onLogin }) {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="card-footer">
             <span className="card-footer-text">SmartStation v1.0</span>
             <div className="status-pill">

@@ -48,14 +48,13 @@ public class AuthController {
                     .body("Funcionario inativo");
         }
 
-        if (funcionario.getCargo() == null || !funcionario.getCargo().equals(Cargo.ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acesso negado: apenas administradores podem acessar o painel");
-        }
+        // Senha padrão para todos: "smart" + matricula
+        // ADMIN também pode usar "admin123"
+        String senhaEsperadaPadrao = "smart" + loginRequest.getMatricula();
+        boolean isAdmin = Cargo.ADMIN.equals(funcionario.getCargo());
 
-        String senhaEsperada = "smart" + loginRequest.getMatricula();
-        boolean senhaCorreta = loginRequest.getSenha().equals(senhaEsperada)
-                || loginRequest.getSenha().equals("admin123");
+        boolean senhaCorreta = loginRequest.getSenha().equals(senhaEsperadaPadrao)
+                || (isAdmin && loginRequest.getSenha().equals("admin123"));
 
         if (!senhaCorreta) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
