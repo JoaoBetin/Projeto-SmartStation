@@ -187,7 +187,7 @@ class ApiClient:
             logger.info(
                 "[API] Sessão encerrada | ID: %s | hora_fim: %s | tempo_ocioso: %s",
                 sessao_id,
-                payload["hora_fim"],
+                payload["horaFim"],
                 tempo_ocioso_str,
             )
             return True

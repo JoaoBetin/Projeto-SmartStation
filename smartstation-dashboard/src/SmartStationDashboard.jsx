@@ -21,21 +21,25 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-function adaptarSessao(s) {
+function adaptarSessao(s, caixasDaSessao = []) {
   let idleBefore = 0;
   if (s.tempoOcioso) {
     const [h, m, sec] = s.tempoOcioso.split(":").map(Number);
     idleBefore = (h * 3600 + m * 60 + sec) * 1000;
   }
+  const caixasComTempo = caixasDaSessao.filter(c => c.tempo_detectado != null && c.tempo_detectado > 0);
+  const avgProc = caixasComTempo.length
+    ? (caixasComTempo.reduce((acc, c) => acc + c.tempo_detectado, 0) / caixasComTempo.length) * 1000
+    : 0;
   return {
     id: s.id,
     funcionarioID: s.funcionarioID,
     entryTime: s.horaInicio ? `${s.data}T${s.horaInicio}` : null,
     exitTime: s.horaFim ? `${s.data}T${s.horaFim}` : null,
-    processingDuration: 0,
+    processingDuration: avgProc,
     idleBefore,
     ativa: s.ativa,
-    totalCaixas: s.totalCaixas ?? 0,
+    totalCaixas: s.totalCaixas ?? caixasDaSessao.length,
   };
 }
 
@@ -362,15 +366,23 @@ export default function SmartStationDashboard({ usuarioLogado, onLogout }) {
     async function carregar() {
       try {
         setErro(null);
-        const [funcs, sessoes] = await Promise.all([
+        const [funcs, sessoes, caixas] = await Promise.all([
           getFuncionarios(),
           getSessoes(),
+          fetch(`${API_BASE}/caixa/listar`).then(r => r.ok ? r.json() : []),
         ]);
 
         setFuncionarios(funcs);
 
+        const caixasPorSessao = {};
+        caixas.forEach(c => {
+          if (c.sessaoId == null) return;
+          if (!caixasPorSessao[c.sessaoId]) caixasPorSessao[c.sessaoId] = [];
+          caixasPorSessao[c.sessaoId].push(c);
+        });
+
         const agrupadas = {};
-        sessoes.map(adaptarSessao).forEach((s) => {
+        sessoes.map(s => adaptarSessao(s, caixasPorSessao[s.id] || [])).forEach((s) => {
           const fid = s.funcionarioID;
           if (fid == null) return;
           if (!agrupadas[fid]) agrupadas[fid] = [];
